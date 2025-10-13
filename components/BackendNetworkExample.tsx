@@ -271,7 +271,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
               onNodeBlur={handleNodeBlur}
             />
             {hoveredNode && (
-              <StatisticsDisplay nodeData={hoveredNode} position={mousePosition} />
+              <StatisticsDisplay nodeData={hoveredNode} position={mousePosition} darkMode={darkMode} />
             )}
           </>
         ) : (

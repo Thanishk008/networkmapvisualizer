@@ -3,9 +3,10 @@
 interface StatisticsDisplayProps {
   nodeData: any
   position: { x: number; y: number }
+  darkMode?: boolean
 }
 
-export default function StatisticsDisplay({ nodeData, position }: StatisticsDisplayProps) {
+export default function StatisticsDisplay({ nodeData, position, darkMode = false }: StatisticsDisplayProps) {
   if (!nodeData) return null
 
   const stats = {
@@ -20,43 +21,51 @@ export default function StatisticsDisplay({ nodeData, position }: StatisticsDisp
     fullNextHopAddress: nodeData.fullNextHopAddress,
   }
 
+  // Colors adapt to theme
+  const bgColor = darkMode ? '#0b1220' : '#ffffff'
+  const borderColor = darkMode ? '#24303a' : '#e5e7eb'
+  const shadow = darkMode ? '0 6px 18px rgba(2,6,23,0.6)' : '0 4px 12px rgba(0,0,0,0.12)'
+  const headerColor = darkMode ? '#f3f4f6' : '#111827'
+  const labelColor = darkMode ? '#94a3b8' : '#6b7280'
+  const valueColor = darkMode ? '#e6eef7' : '#111827'
+
   const containerStyle = {
-    position: "fixed" as const,
+    position: 'fixed' as const,
     left: position?.x || 20,
     top: position?.y || 20,
-    backgroundColor: "white",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    padding: "15px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    backgroundColor: bgColor,
+    border: `1px solid ${borderColor}`,
+    borderRadius: '8px',
+    padding: '15px',
+    boxShadow: shadow,
     zIndex: 1000,
-    minWidth: "200px",
-    fontFamily: "Arial, sans-serif",
-    fontSize: "12px",
+    minWidth: '200px',
+    fontFamily: 'Arial, sans-serif',
+    fontSize: '12px',
   }
 
   const headerStyle = {
-    fontSize: "14px",
-    fontWeight: "bold" as const,
-    marginBottom: "10px",
-    color: "#333",
-    borderBottom: "1px solid #eee",
-    paddingBottom: "5px",
+    fontSize: '14px',
+    fontWeight: 'bold' as const,
+    marginBottom: '10px',
+    color: headerColor,
+    borderBottom: `1px solid ${borderColor}`,
+    paddingBottom: '5px',
   }
 
   const statRowStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: "5px",
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '5px',
   }
 
   const labelStyle = {
-    fontWeight: "bold" as const,
-    color: "#666",
+    fontWeight: 'bold' as const,
+    color: labelColor,
   }
 
   const valueStyle = {
-    color: "#333",
+    color: valueColor,
   }
 
   return (
