@@ -24,6 +24,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const [selectedNode, setSelectedNode] = useState<any>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [selectedSource, setSelectedSource] = useState("")
+  const [selectedTarget, setSelectedTarget] = useState("")
 
   useEffect(() => {
     const loadBackendData = async () => {
@@ -123,38 +124,34 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       )
       .filter((node: any, index: number, self: any[]) => index === self.findIndex((n) => n.id === node.id)) || []
 
+  // Build full node list (physical) for target selection
+  const physicalList = rawBackendData ? NetworkDataAdapter.convertPhysicalOnly(rawBackendData) : { nodes: [], edges: [] }
+  const allNodes = physicalList.nodes || []
+
   const centralNodeId = rawBackendData?.network_map?.node_route_infos?.[0]?.node_name || ""
 
   useEffect(() => {
-    if (!selectedSource || !rawBackendData) {
-      if (rawBackendData) {
-        const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
-        setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
-      }
+    // If either select is empty, show plain physical topology
+    if (!rawBackendData) return
+    const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
+    if (!selectedSource || !selectedTarget) {
+      setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
       return
     }
-    const fullData = NetworkDataAdapter.convertFromBackend(rawBackendData)
-    const directEdge = fullData.edges?.find(
-      (e: any) => e.from === centralNodeId && e.to === selectedSource && e.edgeType === "direct",
-    )
-    if (directEdge) {
-      const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
-      setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
-    } else {
-      const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
-      const routeEdge = fullData.edges?.find(
-        (e: any) => e.from === selectedSource && e.to === centralNodeId && e.edgeType === "route",
-      )
-      if (routeEdge) {
-        physData.edges.push({
-          ...routeEdge,
-          color: darkMode ? "#FFD166" : "#FF6B6B",
-          width: 6,
-          dashes: true,
-          shadow: true,
-          animation: true,
-        })
-      }
+
+    // Both source and target selected -> compute path
+    try {
+      const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget)
+      const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
+      const highlightEdgeStyle = { color: highlightColor, width: 6, dashes: true, shadow: true, animation: true }
+      const highlightNodeStyle = { color: { background: highlightColor, border: highlightColor }, borderWidth: 4 }
+
+      const nodes = physData.nodes.map((n: any) => pathNodes.includes(n.id) ? { ...n, ...highlightNodeStyle } : n)
+      const edges = physData.edges.map((e: any) => pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : e)
+      setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges }))
+    } catch (err: any) {
+      // No path found or error - fall back to physical
+      console.warn('Path compute failed:', err)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
     }
   }, [selectedSource, rawBackendData, centralNodeId, darkMode])
@@ -176,14 +173,21 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
           <label htmlFor="source-select" className="source-label">
             Highlight Path from Source:
           </label>
-          <select
-            id="source-select"
-            value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
-            className="source-select"
-          >
+          <select id="source-select" value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="source-select">
             <option value="">-- Select Source Node --</option>
             {sourceNodes.map((node: any) => (
+              <option key={node.id} value={node.id}>
+                {node.label}
+              </option>
+            ))}
+          </select>
+
+          <label htmlFor="target-select" style={{ marginLeft: '12px' }} className="source-label">
+            Target:
+          </label>
+          <select id="target-select" value={selectedTarget} onChange={(e) => setSelectedTarget(e.target.value)} className="source-select">
+            <option value="">-- Select Target Node --</option>
+            {allNodes.map((node: any) => (
               <option key={node.id} value={node.id}>
                 {node.label}
               </option>
