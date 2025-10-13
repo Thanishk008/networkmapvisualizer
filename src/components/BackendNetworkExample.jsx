@@ -172,12 +172,12 @@ const BackendNetworkExample = (props) => {
     <div onMouseMove={handleMouseMove} style={{ width: '100%', height: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '10px', backgroundColor: darkMode ? '#333' : '#f5f5f5', borderRadius: '5px', boxShadow: darkMode ? '0 2px 8px #111' : '0 2px 8px #ccc' }}>
         <div>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '2rem', color: darkMode ? '#FFD166' : '#333' }}>Network Map (Physical Links)</h2>
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '2rem', color: darkMode ? '#FFD166' : '#333' }}>Network Map</h2>
           <p style={{ margin: '5px 0', color: darkMode ? '#bbb' : '#666', fontSize: '15px' }}>Select both a <b>source</b> and <b>target</b> node to visualize the path. Click a node to view diagnostics and highlight it.</p>
         </div>
         <div className="network-controls">
           <div>
-            <h2 className="network-title" style={{ margin: 0, fontWeight: 700, fontSize: '2rem', color: darkMode ? '#FFD166' : '#333' }}>Network Map (Physical Links)</h2>
+            <h2 className="network-title" style={{ margin: 0, fontWeight: 700, fontSize: '2rem', color: darkMode ? '#FFD166' : '#333' }}>Network Map</h2>
             <p className="network-subtitle" style={{ margin: '5px 0', color: darkMode ? '#bbb' : '#666', fontSize: '15px' }}>Select both a source and target node to highlight the path.</p>
           </div>
           <div className="source-selector" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

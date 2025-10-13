@@ -25,6 +25,8 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [selectedSource, setSelectedSource] = useState("")
   const [selectedTarget, setSelectedTarget] = useState("")
+  const [pathLoading, setPathLoading] = useState(false)
+  const [pathError, setPathError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadBackendData = async () => {
@@ -129,17 +131,14 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const allNodes = physicalList.nodes || []
 
   const centralNodeId = rawBackendData?.network_map?.node_route_infos?.[0]?.node_name || ""
-
-  useEffect(() => {
-    // If either select is empty, show plain physical topology
+  // Compute and highlight path when explicitly requested
+  const computeAndHighlightPath = useCallback(() => {
     if (!rawBackendData) return
     const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     if (!selectedSource || !selectedTarget) {
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
       return
     }
-
-    // Both source and target selected -> compute path
     try {
       const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget)
       const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
@@ -150,53 +149,105 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       const edges = physData.edges.map((e: any) => pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : e)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges }))
     } catch (err: any) {
-      // No path found or error - fall back to physical
       console.warn('Path compute failed:', err)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
     }
-  }, [selectedSource, rawBackendData, centralNodeId, darkMode])
+  }, [rawBackendData, selectedSource, selectedTarget, darkMode])
+
+  // When raw data or theme changes, reset to physical topology
+  useEffect(() => {
+    if (!rawBackendData) return
+    const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
+    setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+  }, [rawBackendData, darkMode])
 
   if (loading) {
     return <div className="loading-container">Loading network topology...</div>
   }
 
+  // Button styles with small animations
+  const btnBase: React.CSSProperties = {
+    padding: '8px 14px',
+    borderRadius: 6,
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease',
+  }
+  const showBtnStyle: React.CSSProperties = {
+    ...btnBase,
+    background: '#17a2b8',
+    color: '#fff',
+    transform: pathLoading ? 'scale(0.98)' : 'scale(1)',
+    boxShadow: pathLoading ? '0 6px 18px rgba(23,162,184,0.18)' : '0 4px 12px rgba(0,0,0,0.08)'
+  }
+  const clearBtnStyle: React.CSSProperties = {
+    ...btnBase,
+    background: '#ffc107',
+    color: '#000'
+  }
+  const refreshBtnStyle: React.CSSProperties = {
+    ...btnBase,
+    background: '#007bff',
+    color: '#fff'
+  }
+
   return (
     <div onMouseMove={handleMouseMove} style={{ width: "100%", height: "100%" }}>
-      <div className="network-controls">
-        <div>
-          <h2 className="network-title">Network Map (Physical Links)</h2>
-          <p className="network-subtitle">
-            Select a source node to highlight multicast route.
-          </p>
+      <div className="network-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ flex: '0 0 auto' }}>
+          <h2 className="network-title">Network Map</h2>
+          <p className="network-subtitle">Select a source and target to visualize a path.</p>
         </div>
-        <div className="source-selector">
-          <label htmlFor="source-select" className="source-label">
-            Highlight Path from Source:
-          </label>
-          <select id="source-select" value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="source-select">
-            <option value="">-- Select Source Node --</option>
-            {sourceNodes.map((node: any) => (
-              <option key={node.id} value={node.id}>
-                {node.label}
-              </option>
-            ))}
-          </select>
 
-          <label htmlFor="target-select" style={{ marginLeft: '12px' }} className="source-label">
-            Target:
-          </label>
-          <select id="target-select" value={selectedTarget} onChange={(e) => setSelectedTarget(e.target.value)} className="source-select">
-            <option value="">-- Select Target Node --</option>
-            {allNodes.map((node: any) => (
-              <option key={node.id} value={node.id}>
-                {node.label}
-              </option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 auto', justifyContent: 'center' }}>
+          <div className="source-selector" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label htmlFor="source-select" className="source-label" style={{ fontWeight: 600 }}>Source</label>
+            <select id="source-select" value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="source-select" style={{ padding: '8px', borderRadius: 6 }}>
+              <option value="">-- Select Source Node --</option>
+              {sourceNodes.map((node: any) => (
+                <option key={node.id} value={node.id}>{node.label}</option>
+              ))}
+            </select>
+
+            <label htmlFor="target-select" className="source-label" style={{ fontWeight: 600 }}>Target</label>
+            <select id="target-select" value={selectedTarget} onChange={(e) => setSelectedTarget(e.target.value)} className="source-select" style={{ padding: '8px', borderRadius: 6 }}>
+              <option value="">-- Select Target Node --</option>
+              {allNodes.map((node: any) => (
+                <option key={node.id} value={node.id}>{node.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => { setPathError(''); setPathLoading(true); computeAndHighlightPath(); setTimeout(() => setPathLoading(false), 300) }}
+              disabled={loading || !selectedSource || !selectedTarget || selectedSource === selectedTarget}
+              style={{ ...showBtnStyle, opacity: (loading || !selectedSource || !selectedTarget || selectedSource === selectedTarget) ? 0.6 : 1 }}
+              title={selectedSource === selectedTarget ? 'Source and target are the same' : 'Compute and show shortest path'}
+            >
+              {pathLoading ? 'Computing…' : 'Show Path'}
+            </button>
+
+            <button
+              onClick={() => {
+                setSelectedSource(''); setSelectedTarget(''); setPathError('');
+                if (rawBackendData) {
+                  const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
+                  setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+                }
+              }}
+              disabled={loading}
+              style={clearBtnStyle}
+            >
+              Clear Path
+            </button>
+          </div>
         </div>
-        <button onClick={handleRefreshData} disabled={loading} className="refresh-button">
-          {loading ? "Refreshing..." : "Refresh Data"}
-        </button>
+
+        <div style={{ flex: '0 0 auto' }}>
+          <button onClick={handleRefreshData} disabled={loading} style={refreshBtnStyle}>{loading ? 'Refreshing...' : 'Refresh Data'}</button>
+        </div>
       </div>
 
       {error && (
