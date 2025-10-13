@@ -1,0 +1,209 @@
+.app {
+/* Theme variables for light and dark mode */
+body {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  transition: background 0.5s;
+}
+
+:root {
+  --color-bg: transparent;
+  --color-card: #fff;
+  --color-header: #333;
+  --color-text: #222;
+  --color-accent: #007bff;
+  --color-legend-phys: #4ECDC4;
+  --color-legend-route: #FF6B6B;
+  --color-legend-highlight: #FFD166;
+  --color-border: #dee2e6;
+}
+
+[data-theme="dark"] {
+  --color-bg: transparent;
+  --color-card: #23272f;
+  --color-header: #FFD166;
+  --color-text: #eee;
+  --color-accent: #FFD166;
+  --color-legend-phys: #45B7B8;
+  --color-legend-route: #FFD166;
+  --color-legend-highlight: #FF6B6B;
+  --color-border: #444;
+}
+.toggle-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: var(--color-card);
+  color: var(--color-header);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: background 0.4s, color 0.4s, border 0.4s;
+  overflow: hidden;
+}
+.toggle-btn .toggle-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFD166 0%, #FF6B6B 100%);
+  box-shadow: 0 0 8px #FFD166;
+  transition: transform 0.4s, background 0.4s, box-shadow 0.4s;
+}
+[data-theme="dark"] .toggle-btn .toggle-icon {
+  background: linear-gradient(135deg, #23272f 0%, #FFD166 100%);
+  box-shadow: 0 0 8px #23272f;
+  transform: rotate(180deg);
+}
+
+.app {
+  min-height: 100vh;
+  background: var(--color-bg);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background 0.3s;
+}
+
+ .app-header {
+  background: var(--color-card);
+  color: var(--color-header);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.3s, color 0.3s;
+}
+
+.app-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.app-header p {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+ .app-main {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--color-bg);
+  transition: background 0.3s;
+}
+
+ .network-container {
+  flex: 1;
+  background: var(--color-card);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--color-border);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+ .legend {
+  min-width: 200px;
+  background: var(--color-card);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  padding: 1.5rem;
+  height: fit-content;
+  border: 1px solid var(--color-border);
+  transition: background 0.3s;
+}
+.legend-phys {
+  background: var(--color-legend-phys);
+  border: 2px solid var(--color-legend-phys);
+}
+.legend-route {
+  background: var(--color-legend-route);
+  border: 2px solid var(--color-legend-route);
+}
+.legend-highlight {
+  background: var(--color-legend-highlight);
+  border: 2px solid var(--color-legend-highlight);
+}
+
+/* Animations for edge highlight */
+.edge-highlight {
+  animation: pulse-highlight 1.2s infinite alternate;
+}
+@keyframes pulse-highlight {
+  0% { box-shadow: 0 0 0px var(--color-legend-highlight); opacity: 0.7; }
+  100% { box-shadow: 0 0 12px var(--color-legend-highlight); opacity: 1; }
+}
+
+.legend h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  flex-shrink: 0;
+}
+
+.app-footer {
+  background: #2c3e50;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .app-main {
+    flex-direction: column;
+  }
+  
+  .legend {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header h1 {
+    font-size: 2rem;
+  }
+  
+  .app-main {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .network-container {
+    height: 400px;
+  }
+}

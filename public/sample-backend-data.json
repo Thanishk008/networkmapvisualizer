@@ -1,0 +1,245 @@
+{
+ "status": "SUCCESS",
+ "network_map": {
+  "node_route_infos": [
+   {
+    "node_name": "1493",
+    "neigh_infos": [
+     {
+      "interface": "usb1",
+      "neigh_node": "4b0b"
+     },
+     {
+      "interface": "usb0",
+      "neigh_node": "4b0a"
+     },
+     {
+      "interface": "eth0",
+      "neigh_node": "ea6"
+     },
+     {
+      "interface": "eth1",
+      "neigh_node": "e9a"
+     }
+    ],
+    "route_infos": [
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "e78e"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1303"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1304"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1be1"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1413"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "e78d"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1493"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "10a1"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "1081"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "140b"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "140f"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1bf5"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "12c7"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "138c"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "ea6"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "10a2"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "ea5"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "e79"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "ea1"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "e7a"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1089"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "130b"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "143b"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "10a5"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "10a6"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "130c"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1096"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "1437"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "1082"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "13cf"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "140c"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1414"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "e99"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "e9a"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "1417"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "138b"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "12c8"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1095"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "ea2"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:e9a",
+      "source_node": "1410"
+     },
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:ea6",
+      "source_node": "1bf6"
+     },
+     {
+      "incoming_interface": "usb0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:4b0a",
+      "source_node": "1bf6"
+     },
+     {
+      "incoming_interface": "usb0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:4b0a",
+      "source_node": "4b0a"
+     }
+    ]
+   }
+  ]
+ }
+}
