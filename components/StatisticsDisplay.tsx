@@ -21,8 +21,8 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
     nextHop: nodeData.nextHop,
     viaInterface: nodeData.viaInterface,
     fullNextHopAddress: nodeData.fullNextHopAddress,
-    rx: nodeData.rx, // Added RX
-    tx: nodeData.tx, // Added TX
+    rx: nodeData.rx, 
+    tx: nodeData.tx, 
   }
 
   // Colors adapt to theme
