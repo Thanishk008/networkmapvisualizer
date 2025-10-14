@@ -20,11 +20,9 @@ export default function DataTest() {
 
         setStatus("Parsing JSON...")
         const rawData = await response.json()
-        console.log("Raw backend data:", rawData)
 
         setStatus("Converting data...")
         const convertedData = NetworkDataAdapter.convertFromBackend(rawData)
-        console.log("Converted data:", convertedData)
 
         setData(convertedData)
         setStatus("Success!")

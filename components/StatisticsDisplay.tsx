@@ -4,9 +4,11 @@ interface StatisticsDisplayProps {
   nodeData: any
   position: { x: number; y: number }
   darkMode?: boolean
+  selectedSource?: string
+  selectedTarget?: string
 }
 
-export default function StatisticsDisplay({ nodeData, position, darkMode = false }: StatisticsDisplayProps) {
+export default function StatisticsDisplay({ nodeData, position, darkMode = false, selectedSource, selectedTarget }: StatisticsDisplayProps) {
   if (!nodeData) return null
 
   const stats = {
@@ -19,6 +21,8 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
     nextHop: nodeData.nextHop,
     viaInterface: nodeData.viaInterface,
     fullNextHopAddress: nodeData.fullNextHopAddress,
+    rx: nodeData.rx, // Added RX
+    tx: nodeData.tx, // Added TX
   }
 
   // Colors adapt to theme
@@ -68,17 +72,14 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
     color: valueColor,
   }
 
+  const isSelectedSource = selectedSource && selectedSource === stats.id
+  const isSelectedTarget = selectedTarget && selectedTarget === stats.id
+  const headerLabel = isSelectedSource ? 'Source Node' : isSelectedTarget ? 'Target Node' : 'Node'
+
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        {stats.type === "central"
-          ? "Central Router"
-          : stats.type === "neighbor"
-            ? "Neighbor Node"
-            : stats.type === "source"
-              ? "Source Node"
-              : "Network Node"}
-        : {stats.id}
+        {headerLabel}: {stats.id}
       </div>
 
       <div style={statRowStyle}>
@@ -86,10 +87,12 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
         <span style={valueStyle}>{stats.id}</span>
       </div>
 
-      <div style={statRowStyle}>
-        <span style={labelStyle}>Node Type:</span>
-        <span style={valueStyle}>{stats.type || "Unknown"}</span>
-      </div>
+      {(isSelectedSource || isSelectedTarget) && (
+        <div style={statRowStyle}>
+          <span style={labelStyle}>Node Type:</span>
+          <span style={valueStyle}>{isSelectedSource ? 'Source' : 'Target'}</span>
+        </div>
+      )}
 
       {stats.interface && (
         <div style={statRowStyle}>
@@ -123,6 +126,20 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
         <div style={statRowStyle}>
           <span style={labelStyle}>Via Interface:</span>
           <span style={valueStyle}>{stats.viaInterface}</span>
+        </div>
+      )}
+
+      {stats.rx !== undefined && (
+        <div style={statRowStyle}>
+          <span style={labelStyle}>RX:</span>
+          <span style={valueStyle}>{stats.rx}</span>
+        </div>
+      )}
+
+      {stats.tx !== undefined && (
+        <div style={statRowStyle}>
+          <span style={labelStyle}>TX:</span>
+          <span style={valueStyle}>{stats.tx}</span>
         </div>
       )}
 

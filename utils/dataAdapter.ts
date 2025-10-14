@@ -5,43 +5,64 @@ export class NetworkDataAdapter {
    * Find shortest path between source and target node IDs using BFS.
    * Returns { pathEdges: string[], pathNodes: string[] } or throws error.
    */
-  static findPath(nodes: any[], edges: any[], sourceId: string, targetId: string) {
+  /**
+   * Find shortest path between source and target node IDs using BFS.
+   * By default the search treats edges as bidirectional (undirected) so a path
+   * can be found regardless of edge 'from' -> 'to' direction. Set `bidirectional=false`
+   * to enforce directed-only traversal.
+   * Returns { pathEdges: string[], pathNodes: string[] } or throws error.
+   */
+  static findPath(nodes: any[], edges: any[], sourceId: string, targetId: string, bidirectional = true) {
     if (!sourceId || !targetId) throw new Error("Source and target must be provided")
     if (sourceId === targetId) return { pathEdges: [], pathNodes: [sourceId] }
     const nodeIds = new Set(nodes.map(n => n.id))
     if (!nodeIds.has(sourceId)) throw new Error(`Source node '${sourceId}' not found`)
     if (!nodeIds.has(targetId)) throw new Error(`Target node '${targetId}' not found`)
-    // Build adjacency list
+    // Build adjacency list. By default add both directions so the search is
+    // effectively undirected while preserving the original edge id (this
+    // allows highlighting the vis-network edge even when traversing the
+    // reverse direction).
     const adj = new Map()
     edges.forEach(e => {
       if (!adj.has(e.from)) adj.set(e.from, [])
       adj.get(e.from).push({ to: e.to, edgeId: e.id })
-    })
-    // BFS
-    type PathStep = { from: string, to: string, edgeId: string }
-    const queue: Array<[string, PathStep[]]> = [[sourceId, []]]
-    const visited = new Set([sourceId])
-    while (queue.length) {
-      const next = queue.shift()
-      if (!next) break
-      const [current, path] = next
-      if (current === targetId) {
-        const pathNodes = [sourceId]
-        const pathEdges = []
-        for (const step of path) {
-          pathNodes.push(step.to)
-          pathEdges.push(step.edgeId)
-        }
-        return { pathEdges, pathNodes }
+      if (bidirectional) {
+        if (!adj.has(e.to)) adj.set(e.to, [])
+        // add reverse neighbor that records the same edge id
+        adj.get(e.to).push({ to: e.from, edgeId: e.id })
       }
-      const neighbors = adj.get(current) || []
+    })
+
+    // BFS
+    type PathStep = { from: string, to: string, edgeId: string };
+    const queue: Array<[string, PathStep[]]> = [[sourceId, []]];
+    const visited = new Set([sourceId]);
+
+    while (queue.length) {
+      const next = queue.shift();
+      if (!next) break;
+      const [current, path] = next;
+
+      if (current === targetId) {
+        const pathNodes = [sourceId];
+        const pathEdges = [];
+        for (const step of path) {
+          pathNodes.push(step.to);
+          pathEdges.push(step.edgeId);
+        }
+        return { pathEdges, pathNodes };
+      }
+
+      const neighbors = adj.get(current) || [];
       for (const neighbor of neighbors) {
         if (!visited.has(neighbor.to)) {
-          visited.add(neighbor.to)
-          queue.push([neighbor.to, [...path, { from: current, to: neighbor.to, edgeId: neighbor.edgeId }]])
+          visited.add(neighbor.to);
+          queue.push([neighbor.to, [...path, { from: current, to: neighbor.to, edgeId: neighbor.edgeId }]]);
         }
       }
     }
+
+    console.error(`No path found from '${sourceId}' to '${targetId}'`);
     throw new Error(`No path found from '${sourceId}' to '${targetId}'`)
   }
   static convertPhysicalOnly(backendJson: any) {
@@ -144,7 +165,7 @@ export class NetworkDataAdapter {
       from: edge.from || edge.source || edge.sourceId,
       to: edge.to || edge.target || edge.targetId,
       label: edge.label || edge.name || "",
-      arrows: "to",
+      arrows: { to: { enabled: false } }, // Ensure arrows are disabled
       width: this.calculateEdgeWidth(edge),
       dashes: edge.dashes || edge.isDashed || false,
       color: edge.color || this.getEdgeColor(edge),

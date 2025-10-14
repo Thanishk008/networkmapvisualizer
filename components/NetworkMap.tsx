@@ -34,8 +34,7 @@ const getNetworkOptions = (darkMode: boolean) => ({
     },
     arrows: {
       to: {
-        enabled: true,
-        scaleFactor: 1,
+        enabled: false,
       },
     },
     font: {
@@ -111,7 +110,7 @@ interface NetworkMapProps {
 }
 
 
-  export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNodeBlur, darkMode = false, selectedNode }: NetworkMapProps) {
+export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNodeBlur, darkMode = false, selectedNode }: NetworkMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
 
@@ -141,7 +140,10 @@ interface NetworkMapProps {
           })
         };
       }
-      const network = new Network(containerRef.current, visData, getNetworkOptions(darkMode));
+      // Explicitly disable arrows in the vis-network instance
+      const options = getNetworkOptions(darkMode);
+      options.edges.arrows = { to: { enabled: false } }; // Corrected type
+      const network = new Network(containerRef.current, visData, options);
       networkRef.current = network;
 
       network.on("hoverNode", (event) => {
