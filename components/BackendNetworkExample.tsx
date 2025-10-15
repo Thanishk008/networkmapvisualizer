@@ -28,6 +28,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const [pathLoading, setPathLoading] = useState(false)
   const [pathHighlighted, setPathHighlighted] = useState(false)
   const [pathError, setPathError] = useState<string | null>(null)
+  const [noPathExists, setNoPathExists] = useState(false)
 
   useEffect(() => {
     const loadBackendData = async () => {
@@ -191,6 +192,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     if (!selectedSource || !selectedTarget) {
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
       setPathHighlighted(false)
+      setNoPathExists(false)
       return
     }
     try {
@@ -203,11 +205,14 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       const edges = physData.edges.map((e: any) => pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : e)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges }))
       // If a path with at least source and target exists, mark highlighted
-      setPathHighlighted((pathNodes || []).length > 1)
+      const hasPath = (pathNodes || []).length > 1
+      setPathHighlighted(hasPath)
+      setNoPathExists(!hasPath)
     } catch (err: any) {
       console.warn('Path compute failed:', err)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
       setPathHighlighted(false)
+      setNoPathExists(true)
     }
   }, [rawBackendData, selectedSource, selectedTarget, darkMode])
 
@@ -304,6 +309,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
             <button
               onClick={() => {
                 setSelectedSource(''); setSelectedTarget(''); setPathError('');
+                setNoPathExists(false)
                 if (rawBackendData) {
                   const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
                   setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
@@ -332,6 +338,11 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       )}
 
       <div className="network-container" style={{ width: "100%", height: "600px", position: "relative" }}>
+        {noPathExists && (
+          <div style={{ color: '#ff4d4f', fontWeight: 700, marginBottom: 8, textAlign: 'center', fontStyle: 'italic' }}>
+            No path exists between the selected nodes.
+          </div>
+        )}
         {networkData ? (
           <>
             <NetworkMap
