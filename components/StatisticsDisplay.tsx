@@ -23,6 +23,7 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
     fullNextHopAddress: nodeData.fullNextHopAddress,
     rx: nodeData.rx, 
     tx: nodeData.tx, 
+    connectedInterfaces: nodeData.connectedInterfaces, // <-- Added line
   }
 
   // Colors adapt to theme
@@ -94,13 +95,6 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
         </div>
       )}
 
-      {stats.interface && (
-        <div style={statRowStyle}>
-          <span style={labelStyle}>Interface:</span>
-          <span style={valueStyle}>{stats.interface}</span>
-        </div>
-      )}
-
       {stats.routeCount !== undefined && (
         <div style={statRowStyle}>
           <span style={labelStyle}>Routes:</span>
@@ -149,6 +143,21 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
           <span style={{ ...valueStyle, fontSize: "10px", wordBreak: "break-all" }}>{stats.fullNextHopAddress}</span>
         </div>
       )}
+
+      {Array.isArray(stats.connectedInterfaces) && stats.connectedInterfaces.length > 0 ? (
+        <div style={{ ...statRowStyle, marginTop: '10px', alignItems: 'flex-start' }}>
+          <span style={labelStyle}>Connections:</span>
+          <div style={{ margin: '5px 0 0 15px', color: valueColor, fontFamily: 'monospace' }}>
+            {stats.connectedInterfaces
+              .filter((conn: any) => conn && conn.neighbor)
+              .map((conn: any, index: number) => (
+                <div key={index} style={{ marginBottom: '4px' }}>
+                  {conn.interface}: {conn.neighbor}
+                </div>
+              ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

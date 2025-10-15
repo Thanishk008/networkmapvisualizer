@@ -143,7 +143,17 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       // Explicitly disable arrows in the vis-network instance
       const options = getNetworkOptions(darkMode);
       options.edges.arrows = { to: { enabled: false } }; // Corrected type
-      const network = new Network(containerRef.current, visData, options);
+
+      // Exclude label from edges
+      const { nodes, edges } = visData;
+      const updatedEdges = edges.map((edge: any) => {
+        const { label, ...rest } = edge; // Remove the label property
+        return rest;
+      });
+
+      const updatedNetworkData = { nodes, edges: updatedEdges };
+
+      const network = new Network(containerRef.current, updatedNetworkData, options);
       networkRef.current = network;
 
       network.on("hoverNode", (event) => {

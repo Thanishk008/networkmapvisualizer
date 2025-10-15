@@ -63,15 +63,73 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     loadBackendData()
   }, [darkMode])
 
+  // Helper: compute connected interfaces for a given node by scanning all node_route_infos
+  const computeConnectedInterfaces = useCallback((nodeId: string) => {
+    const conns: Array<{ interface: string; neighbor: string }> = []
+    const infos = rawBackendData?.network_map?.node_route_infos || []
+    const target = (nodeId || '').toString().trim()
+    if (!target) return []
+
+    for (const nodeInfo of infos) {
+      const owner = (nodeInfo.node_name || '').toString().trim()
+
+      // If nodeInfo describes the queried node, include its neigh_infos (local view)
+      if (owner && owner === target) {
+        for (const neigh of nodeInfo.neigh_infos || []) {
+          const neighNode = (neigh.neigh_node || neigh.neighbor || '').toString().trim()
+          const iface = (neigh.neigh_interface || neigh.interface || '').toString().trim()
+          if (neighNode) {
+            conns.push({ interface: iface || 'unknown', neighbor: neighNode })
+          }
+        }
+      }
+
+      // If other nodes list the queried node as a neighbor, include that interface pointing to the other node
+      for (const neigh of nodeInfo.neigh_infos || []) {
+        const neighNode = (neigh.neigh_node || neigh.neighbor || '').toString().trim()
+        const iface = (neigh.neigh_interface || neigh.interface || '').toString().trim()
+        if (neighNode && neighNode === target) {
+          conns.push({ interface: iface || 'unknown', neighbor: owner || nodeInfo.node_name })
+        }
+      }
+    }
+
+    // Deduplicate by normalized interface+neighbor, and sort
+    const seen = new Set<string>()
+    const dedup: Array<{ interface: string; neighbor: string }> = []
+    for (const c of conns) {
+      const iface = (c.interface || '').toString().trim()
+      const neigh = (c.neighbor || '').toString().trim()
+      if (!neigh) continue
+      const key = `${iface.toLowerCase()}::${neigh.toLowerCase()}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        dedup.push({ interface: iface || 'unknown', neighbor: neigh })
+      }
+    }
+
+    // Sort by interface name then neighbor
+    dedup.sort((a, b) => a.interface.localeCompare(b.interface) || a.neighbor.localeCompare(b.neighbor))
+    return dedup
+  }, [rawBackendData])
+
   const handleNodeHover = useCallback((nodeData: any) => {
-    setHoveredNode(nodeData)
-  }, [])
+    if (!nodeData || !rawBackendData) {
+      setHoveredNode(null);
+      return;
+    }
+
+    const connectedInterfaces = computeConnectedInterfaces(nodeData.id)
+    const enrichedNodeData = { ...nodeData, connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
+    setHoveredNode(enrichedNodeData);
+  }, [rawBackendData, computeConnectedInterfaces])
 
   const handleNodeClick = useCallback((nodeData: any) => {
     if (!nodeData || !rawBackendData) {
       setSelectedNode(null);
       return;
     }
+
     // Find backend node info for statistics
     let backendNodeInfo = null;
     for (const nodeInfo of rawBackendData.network_map?.node_route_infos || []) {
@@ -79,17 +137,12 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
         backendNodeInfo = nodeInfo;
         break;
       }
-      for (const neighInfo of nodeInfo.neigh_infos || []) {
-        if (neighInfo.neigh_node === nodeData.id) {
-          backendNodeInfo = neighInfo;
-          break;
-        }
-      }
     }
-    // Merge vis-network nodeData with backendNodeInfo
-    const mergedNode = { ...nodeData, ...backendNodeInfo };
+
+    const connectedInterfaces = computeConnectedInterfaces(nodeData.id)
+    const mergedNode = { ...nodeData, ...backendNodeInfo, connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
     setSelectedNode(mergedNode);
-  }, [rawBackendData])
+  }, [rawBackendData, computeConnectedInterfaces])
 
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
     setMousePosition({ x: event.clientX + 10, y: event.clientY + 10 })
@@ -130,7 +183,6 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const physicalList = rawBackendData ? NetworkDataAdapter.convertPhysicalOnly(rawBackendData) : { nodes: [], edges: [] }
   const allNodes = physicalList.nodes || []
 
-  const centralNodeId = rawBackendData?.network_map?.node_route_infos?.[0]?.node_name || ""
   // Compute and highlight path when explicitly requested
   const computeAndHighlightPath = useCallback(() => {
     if (!rawBackendData) return
@@ -224,7 +276,13 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
               onClick={() => { setPathError(''); setPathLoading(true); computeAndHighlightPath(); setTimeout(() => setPathLoading(false), 300) }}
               disabled={loading || !selectedSource || !selectedTarget || selectedSource === selectedTarget}
               style={{ ...showBtnStyle, opacity: (loading || !selectedSource || !selectedTarget || selectedSource === selectedTarget) ? 0.6 : 1 }}
-              title={selectedSource === selectedTarget ? 'Source and target are the same' : 'Compute and show shortest path'}
+              title={
+                !selectedSource || !selectedTarget
+                  ? 'Please select both source and target nodes.'
+                  : selectedSource === selectedTarget
+                  ? 'Source and target nodes are the same. Please select different nodes.'
+                  : 'Compute and show shortest path'
+              }
             >
               {pathLoading ? 'Computing…' : 'Show Path'}
             </button>
