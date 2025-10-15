@@ -300,7 +300,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
                   ? 'Please select both source and target nodes.'
                   : selectedSource === selectedTarget
                   ? 'Source and target nodes are the same. Please select different nodes.'
-                  : 'Compute and show shortest path'
+                  : 'Compute and show the path'
               }
             >
               {pathLoading ? 'Computing…' : 'Show Path'}
@@ -319,6 +319,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
               disabled={loading}
               className="action-btn clear-variant highlight-enabled"
               style={clearBtnStyle}
+              title="Clear selected path and reset view"
             >
               Clear Path
             </button>

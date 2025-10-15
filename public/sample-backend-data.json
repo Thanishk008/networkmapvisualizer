@@ -239,7 +239,37 @@
       "source_node": "4b0a"
      }
     ]
-   }
+   },
+   {
+    "node_name": "ea6",
+    "neigh_infos": [
+     {
+      "interface": "eth0",
+      "neigh_node": "1493"
+     },
+     {
+      "interface": "eth1",
+      "neigh_node": "10a5"
+     }
+    ],
+    "route_infos": [
+     {
+      "incoming_interface": "eth0",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:1493",
+      "source_node": "1493"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:10a5",
+      "source_node": "10a5"
+     },
+     {
+      "incoming_interface": "eth1",
+      "iif_neigh_node": "2001:db8::2b0:19ff:fe7a:1304",
+      "source_node": "1304"
+     }
+    ]
+    }
   ]
  }
 }

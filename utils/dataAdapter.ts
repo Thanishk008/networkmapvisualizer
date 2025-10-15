@@ -99,18 +99,22 @@ export class NetworkDataAdapter {
             nodeMap.set(neighborId, true)
           }
           const directEdgeId = `direct-${centralNodeId}-${neighborId}`
-          if (!edgeMap.has(directEdgeId)) {
+          // Normalize undirected direct edge id so the link between two nodes
+          // is represented only once even if both nodes list each other.
+          const [a, b] = [centralNodeId, neighborId].sort()
+          const normalizedDirectId = `direct-${a}-${b}`
+          if (!edgeMap.has(normalizedDirectId)) {
             edges.push({
-              id: directEdgeId,
-              from: centralNodeId,
-              to: neighborId,
+              id: normalizedDirectId,
+              from: a,
+              to: b,
               label: `${interfaceType}`,
               edgeType: "direct",
               width: 3,
               color: "#4ECDC4",
               dashes: false,
             })
-            edgeMap.add(directEdgeId)
+            edgeMap.add(normalizedDirectId)
           }
         })
       }
@@ -317,18 +321,22 @@ Latency: ${latency}`
           }
 
           const directEdgeId = `direct-${centralNodeId}-${neighborId}`
-          if (!edgeMap.has(directEdgeId)) {
-            edges.push({
-              id: directEdgeId,
-              from: centralNodeId,
-              to: neighborId,
-              label: `${interfaceType}`,
-              traffic: 0,
-              edgeType: "direct",
-              width: 3,
-            })
-            edgeMap.add(directEdgeId)
-          }
+            // Normalize undirected direct edge id so the link between two nodes
+            // is represented only once even if both nodes list each other.
+            const [a, b] = [centralNodeId, neighborId].sort()
+            const normalizedDirectId = `direct-${a}-${b}`
+            if (!edgeMap.has(normalizedDirectId)) {
+              edges.push({
+                id: normalizedDirectId,
+                from: a,
+                to: b,
+                label: `${interfaceType}`,
+                traffic: 0,
+                edgeType: "direct",
+                width: 3,
+              })
+              edgeMap.add(normalizedDirectId)
+            }
         })
       }
 

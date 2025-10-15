@@ -26,7 +26,10 @@ export default function Page() {
         <h1>Network Map Visualizer</h1>
         <p>IPv6 Multicast Routing Topology</p>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: '10px' }}>
-          <button onClick={() => setShowInfo(!showInfo)} className="header-button header-action action-btn info-button highlight-enabled">
+          <button onClick={() => setShowInfo(!showInfo)} 
+          className="header-button header-action action-btn info-button highlight-enabled"
+          title = "Toggle information panel"
+          >
             {showInfo ? "Hide Info" : "Show Info"}
           </button>
           <button
