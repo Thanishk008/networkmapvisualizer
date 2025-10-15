@@ -26,6 +26,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const [selectedSource, setSelectedSource] = useState("")
   const [selectedTarget, setSelectedTarget] = useState("")
   const [pathLoading, setPathLoading] = useState(false)
+  const [pathHighlighted, setPathHighlighted] = useState(false)
   const [pathError, setPathError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -189,6 +190,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     if (!selectedSource || !selectedTarget) {
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+      setPathHighlighted(false)
       return
     }
     try {
@@ -200,9 +202,12 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       const nodes = physData.nodes.map((n: any) => pathNodes.includes(n.id) ? { ...n, ...highlightNodeStyle } : n)
       const edges = physData.edges.map((e: any) => pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : e)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges }))
+      // If a path with at least source and target exists, mark highlighted
+      setPathHighlighted((pathNodes || []).length > 1)
     } catch (err: any) {
       console.warn('Path compute failed:', err)
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+      setPathHighlighted(false)
     }
   }, [rawBackendData, selectedSource, selectedTarget, darkMode])
 
@@ -212,6 +217,15 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
   }, [rawBackendData, darkMode])
+
+  // Listen for a global refresh event so header can host the refresh button
+  useEffect(() => {
+    const onRefresh = () => {
+      if (typeof handleRefreshData === 'function') handleRefreshData()
+    }
+    window.addEventListener('network-refresh', onRefresh)
+    return () => window.removeEventListener('network-refresh', onRefresh)
+  }, [])
 
   if (loading) {
     return <div className="loading-container">Loading network topology...</div>
@@ -230,7 +244,6 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     ...btnBase,
     background: '#17a2b8',
     color: '#fff',
-    transform: pathLoading ? 'scale(0.98)' : 'scale(1)',
     boxShadow: pathLoading ? '0 6px 18px rgba(23,162,184,0.18)' : '0 4px 12px rgba(0,0,0,0.08)'
   }
   const clearBtnStyle: React.CSSProperties = {
@@ -275,6 +288,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
             <button
               onClick={() => { setPathError(''); setPathLoading(true); computeAndHighlightPath(); setTimeout(() => setPathLoading(false), 300) }}
               disabled={loading || !selectedSource || !selectedTarget || selectedSource === selectedTarget}
+              className={`action-btn ${pathLoading ? 'is-loading' : ''} ${(!loading && selectedSource && selectedTarget && selectedSource !== selectedTarget) ? 'highlight-enabled' : ''}`}
               style={{ ...showBtnStyle, opacity: (loading || !selectedSource || !selectedTarget || selectedSource === selectedTarget) ? 0.6 : 1 }}
               title={
                 !selectedSource || !selectedTarget
@@ -294,8 +308,10 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
                   const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
                   setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
                 }
+                setPathHighlighted(false)
               }}
               disabled={loading}
+              className="action-btn clear-variant highlight-enabled"
               style={clearBtnStyle}
             >
               Clear Path
@@ -303,9 +319,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
           </div>
         </div>
 
-        <div style={{ flex: '0 0 auto' }}>
-          <button onClick={handleRefreshData} disabled={loading} style={refreshBtnStyle}>{loading ? 'Refreshing...' : 'Refresh Data'}</button>
-        </div>
+        {/* Refresh button moved to header; component will listen for a global 'network-refresh' event */}
       </div>
 
       {error && (

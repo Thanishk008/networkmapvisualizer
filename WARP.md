@@ -67,7 +67,6 @@ The `NetworkDataAdapter` can handle multiple input formats:
 - **Real-time Statistics**: Node selection displays RX/TX rates, traffic, latency, uptime
 - **Color-coded Node Types**: Source (green), Destination (pink), Intermediate (orange), Router/Switch (blue)
 - **Dynamic Edge Styling**: Width and color based on traffic levels
-- **Physics Simulation**: Automatic node positioning
 
 ### State Management
 - Uses React's built-in state management with hooks
@@ -87,7 +86,7 @@ To integrate with external data sources:
 Key customization points in `NetworkMap.jsx`:
 - **Node styling**: Modify `options.nodes` and `options.groups`
 - **Edge styling**: Customize `options.edges` configuration
-- **Physics behavior**: Adjust `options.physics` settings
+- **Physics behavior**: Adjust `options.physics` settings (default: false)
 - **Interaction behavior**: Configure `options.interaction`
 
 #### Extending Statistics Display
@@ -128,7 +127,6 @@ src/
 ### Performance Considerations
 - vis-network handles large networks efficiently, but consider data pagination for 1000+ nodes
 - Mouse event handlers are optimized with useCallback
-- Physics simulation can be disabled for static layouts to improve performance
 
 ## Backend Integration
 

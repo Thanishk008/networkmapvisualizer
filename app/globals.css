@@ -53,7 +53,7 @@
   --color-info-border: #dee2e6;
   --color-info-text: #495057;
   --color-info-heading: #6c757d;
-  --color-button-info: #17a2b8;
+  --color-button-info: #046e64;
   --color-button-debug: #ffc107;
   --color-button-debug-text: #000;
   --color-error-bg: #ffebee;
@@ -111,7 +111,7 @@
   --color-info-border: #444;
   --color-info-text: #eee;
   --color-info-heading: #ffd166;
-  --color-button-info: #45b7b8;
+  --color-button-info: #046e64;
   --color-button-debug: #ffd166;
   --color-button-debug-text: #000;
   --color-error-bg: #3d1f1f;
@@ -365,6 +365,63 @@
   background: var(--color-button-info);
 }
 
+.refresh-button {
+  background: var(--color-accent, #007bff);
+}
+
+/* Unified header action style to match show/clear path buttons */
+.header-action {
+  background: var(--color-button-info);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  font-weight: 600;
+}
+
+/* Shared action button styles used by header and component buttons */
+.action-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #fff;
+  /* use CSS variables so translate and scale can be combined without conflicts */
+  --btn-translate: 0px;
+  --btn-scale: 1;
+  transform: translateY(var(--btn-translate)) scale(var(--btn-scale));
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn.highlight-enabled:hover:not(:disabled) {
+  --btn-translate: -2px;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading class: slightly scale down and prevent hover raise */
+.action-btn.is-loading {
+  --btn-scale: 0.98;
+}
+.action-btn.is-loading:hover {
+  /* keep scaled state while loading */
+  --btn-translate: 0px;
+}
+
+/* Clear path variant keeps dark text on yellow background */
+.action-btn.clear-variant {
+  color: #000;
+}
+
 .debug-button {
   background: var(--color-button-debug);
   color: var(--color-button-debug-text);
@@ -506,26 +563,11 @@
 }
 
 .refresh-button {
-  padding: 8px 16px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: opacity 0.2s, transform 0.1s;
   white-space: nowrap;
+  transition: opacity 0.2s, transform 0.1s;
 }
 
-.refresh-button:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.refresh-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+/* refresh-button inherits hover/disabled behavior from .action-btn when used together */
 
 .error-message {
   padding: 15px;

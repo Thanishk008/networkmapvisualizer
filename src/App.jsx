@@ -47,7 +47,7 @@ function App() {
               <div>
                 <h4>Data Source</h4>
                 <ul>
-                  <li>C++ Backend Processor (confrpc.cpp)</li>
+                  <li>C++ Backend Processor</li>
                   <li>IPv6 Multicast Routing Tables</li>
                   <li>Neighbor Discovery Information</li>
                   <li>Interface Configuration Data</li>
@@ -56,16 +56,15 @@ function App() {
               <div>
                 <h4>Network Details</h4>
                 <ul>
-                  <li>Central Node: 1493</li>
                   <li>Multicast Group: ff1e::112</li>
-                  <li>40+ Source Nodes with Routing Paths</li>
-                  <li>4 Direct Neighbor Connections</li>
+                  <li>40+ Nodes with Routing Paths</li>
+                  <li>upto 4 Direct Neighbor Connections</li>
                 </ul>
               </div>
               <div>
                 <h4>Visualization Features</h4>
                 <ul>
-                  <li>Static Network Layout (No Physics)</li>
+                  <li>Static Network Layout</li>
                   <li>Hover for Node Statistics</li>
                   <li>Color-coded Node Types</li>
                   <li>Interface-specific Connections</li>
