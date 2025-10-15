@@ -47,7 +47,7 @@
   /* Use consistent teal color for physical connections in both modes */
   --color-legend-phys: #4ecdc4;
   --color-legend-route: #ff6b6b;
-  --color-legend-highlight: #ffd166;
+  --color-legend-highlight: #ff6b6b;
   --color-border: #dee2e6;
   --color-info-bg: #f8f9fa;
   --color-info-border: #dee2e6;
@@ -105,7 +105,7 @@
   /* Use consistent teal color for physical connections in both modes */
   --color-legend-phys: #4ecdc4;
   --color-legend-route: #ffd166;
-  --color-legend-highlight: #ff6b6b;
+  --color-legend-highlight: #ffd166;
   --color-border: #444;
   --color-info-bg: #2a2e35;
   --color-info-border: #444;
