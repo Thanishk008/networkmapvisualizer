@@ -8,53 +8,97 @@ export class NetworkDataAdapter {
    * Convert backend JSON to vis-network format with only physical connections
    */
   static convertPhysicalOnly(backendJson) {
-    if (!backendJson || !backendJson.network_map || !backendJson.network_map.node_route_infos) {
-      throw new Error('Invalid backend JSON format - missing network_map.node_route_infos');
+    if (!backendJson) {
+      throw new Error('Invalid backend JSON format - missing content')
     }
-    const nodeRouteInfos = backendJson.network_map.node_route_infos;
+    // Accept payloads where nodes are wrapped in a `network_map` property
+    // (new schema), or where a raw array/single node was passed directly.
+    let nodeRouteInfos = []
+    if (backendJson && backendJson.network_map) {
+      const nm = backendJson.network_map
+      if (Array.isArray(nm)) nodeRouteInfos = nm
+      else {
+        const vals = Object.values(nm)
+        if (vals.length > 0 && vals.every(v => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) nodeRouteInfos = vals
+        else nodeRouteInfos = [nm]
+      }
+    } else if (Array.isArray(backendJson)) {
+      nodeRouteInfos = backendJson
+    } else {
+      nodeRouteInfos = [backendJson]
+    }
     const nodes = [];
     const edges = [];
     const nodeMap = new Map();
     const edgeMap = new Set();
+    // helper to normalize ids (IPv6 -> last hex segment)
+    const normalizeId = (raw) => {
+      if (raw === undefined || raw === null) return '';
+      const s = raw.toString().trim();
+      if (!s) return '';
+      if (s.includes(':')) return this.extractLastHex(s);
+      return s;
+    };
+
     nodeRouteInfos.forEach(nodeInfo => {
-      const centralNodeId = nodeInfo.node_name;
-      if (!nodeMap.has(centralNodeId)) {
+      const targetRaw = nodeInfo.node_name || nodeInfo.nodeName || nodeInfo.name;
+      const targetNodeId = normalizeId(targetRaw);
+      if (!targetNodeId) return;
+      if (!nodeMap.has(targetNodeId)) {
         nodes.push({
-          id: centralNodeId,
-          label: `Node ${centralNodeId}`,
-          type: 'central',
+          id: targetNodeId,
+          label: `Node ${targetNodeId}`,
+          type: 'target',
         });
-        nodeMap.set(centralNodeId, true);
+        nodeMap.set(targetNodeId, true);
       }
-      if (nodeInfo.neigh_infos) {
-        nodeInfo.neigh_infos.forEach(neighInfo => {
-          const neighborId = neighInfo.neigh_node;
-          const interfaceType = neighInfo.interface;
-          if (!nodeMap.has(neighborId)) {
-            nodes.push({
-              id: neighborId,
-              label: `Node ${neighborId}`,
-              type: 'neighbor',
-              interface: interfaceType
-            });
-            nodeMap.set(neighborId, true);
-          }
-          const directEdgeId = `direct-${centralNodeId}-${neighborId}`;
-          if (!edgeMap.has(directEdgeId)) {
-            edges.push({
-              id: directEdgeId,
-              from: centralNodeId,
-              to: neighborId,
-              label: `${interfaceType}`,
-              edgeType: 'direct',
-              width: 3,
-              color: '#4ECDC4',
-              dashes: false
-            });
-            edgeMap.add(directEdgeId);
-          }
-        });
+
+  // Preserve local interface info for the target node (do not create new nodes)
+      const localIfs = nodeInfo.local_ip_info || nodeInfo.local_ip_infos || [];
+      if (Array.isArray(localIfs) && localIfs.length > 0) {
+        const existingTarget = nodes.find(n => n.id === targetNodeId);
+        if (existingTarget) existingTarget.localInterfaces = localIfs.map(li => ({ interface: li.interface || li.iface, ip: li.local_ip || li.ip || li.address }));
       }
+
+      const neighInfos = nodeInfo.neigh_ip_info || nodeInfo.neigh_infos || nodeInfo.neigh_list || [];
+      neighInfos.forEach(neighInfo => {
+        const rawNeighbor = neighInfo.neigh_node || neighInfo.neigh || neighInfo.neigh_ip || neighInfo.id;
+        const neighborId = normalizeId(rawNeighbor);
+        const interfaceType = neighInfo.interface || neighInfo.iface || undefined;
+        if (!neighborId) return;
+        if (!nodeMap.has(neighborId)) {
+          nodes.push({ id: neighborId, label: `Node ${neighborId}`, type: 'neighbor', interface: interfaceType });
+          nodeMap.set(neighborId, true);
+        }
+
+        // canonicalize undirected physical link id
+        const [a, b] = [targetNodeId, neighborId].sort();
+        const directEdgeId = `direct-${a}-${b}`;
+        if (!edgeMap.has(directEdgeId)) {
+          edges.push({ id: directEdgeId, from: a, to: b, label: interfaceType || 'link', edgeType: 'direct', width: 3, color: '#4ECDC4', dashes: false });
+          edgeMap.add(directEdgeId);
+        }
+      });
+
+      const routes = nodeInfo.route_info || nodeInfo.route_infos || [];
+      routes.forEach(r => {
+        const rawSource = r.source_node || r.source || r.source_ip || r.src;
+        const sourceId = normalizeId(rawSource);
+        const incomingInterface = r.incoming_interface || r.iif || r.iface || r.via || '';
+        if (!sourceId) return;
+        const rawNextHop = r.iif_neigh_node || r.next_hop || r.nextHop;
+        const nextHopId = normalizeId(rawNextHop) || undefined;
+        if (!nodeMap.has(sourceId)) {
+          nodes.push({ id: sourceId, label: `Node ${sourceId}`, type: 'source', nextHop: nextHopId, viaInterface: incomingInterface, fullNextHopAddress: rawNextHop });
+          nodeMap.set(sourceId, true);
+        }
+        // route edges point from source -> target
+        const routeId = `route-${sourceId}-${targetNodeId}-${incomingInterface || 'i'}`;
+        if (!edgeMap.has(routeId)) {
+          edges.push({ id: routeId, from: sourceId, to: targetNodeId, label: `via ${incomingInterface || 'unknown'}`, dashes: true, edgeType: 'route', width: 1, nextHop: nextHopId });
+          edgeMap.add(routeId);
+        }
+      });
     });
     return { nodes, edges };
   }
@@ -256,11 +300,28 @@ Latency: ${latency}`;
    * @returns {Object} Standard network data format
    */
   static convertFromBackend(backendJson) {
-    if (!backendJson || !backendJson.network_map || !backendJson.network_map.node_route_infos) {
-      throw new Error('Invalid backend JSON format - missing network_map.node_route_infos');
+    if (!backendJson) {
+      throw new Error('Invalid backend JSON')
     }
 
-    const nodeRouteInfos = backendJson.network_map.node_route_infos;
+    // The new backend schema places node entries under `network_map` which
+    // may be an array or an object whose values are node entries. We no
+    // longer support the legacy `network_map.node_route_infos` structure.
+    let nodeRouteInfos = []
+    if (backendJson.network_map) {
+      const nm = backendJson.network_map
+      if (Array.isArray(nm)) nodeRouteInfos = nm
+      else {
+        const vals = Object.values(nm)
+        if (vals.length > 0 && vals.every(v => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) {
+          nodeRouteInfos = vals
+        } else {
+          nodeRouteInfos = [nm]
+        }
+      }
+    } else {
+      throw new Error('Unrecognized backend JSON format for new schema')
+    }
     const nodes = [];
     const edges = [];
     const nodeMap = new Map(); // Track created nodes to avoid duplicates
@@ -268,14 +329,14 @@ Latency: ${latency}`;
 
     // Process all node route information
     nodeRouteInfos.forEach(nodeInfo => {
-      const centralNodeId = nodeInfo.node_name;
+      const targetNodeId = nodeInfo.node_name;
       
-      // Create central node if not already created
-      if (!nodeMap.has(centralNodeId)) {
+      // Create target node if not already created
+      if (!nodeMap.has(targetNodeId)) {
         nodes.push({
-          id: centralNodeId,
-          label: `Node ${centralNodeId}`,
-          type: 'central',
+          id: targetNodeId,
+          label: `Node ${targetNodeId}`,
+          type: 'target',
           rx: '0 Mbps',
           tx: '0 Mbps',
           traffic: '0%',
@@ -283,7 +344,7 @@ Latency: ${latency}`;
           routeCount: nodeInfo.route_infos ? nodeInfo.route_infos.length : 0,
           neighborCount: nodeInfo.neigh_infos ? nodeInfo.neigh_infos.length : 0
         });
-        nodeMap.set(centralNodeId, true);
+        nodeMap.set(targetNodeId, true);
       }
 
       // Process ALL neighbor information to create neighbor nodes and direct connections
@@ -307,13 +368,14 @@ Latency: ${latency}`;
             nodeMap.set(neighborId, true);
           }
 
-          // Create direct connection edge
-          const directEdgeId = `direct-${centralNodeId}-${neighborId}`;
+          // Create direct connection edge (canonicalized so a-b == b-a)
+          const [a, b] = [targetNodeId, neighborId].sort();
+          const directEdgeId = `direct-${a}-${b}`;
           if (!edgeMap.has(directEdgeId)) {
             edges.push({
               id: directEdgeId,
-              from: centralNodeId,
-              to: neighborId,
+              from: a,
+              to: b,
               label: `${interfaceType}`,
               traffic: 0,
               edgeType: 'direct',
@@ -348,13 +410,13 @@ Latency: ${latency}`;
             nodeMap.set(sourceNodeId, true);
           }
 
-          // Create routing path edge
-          const routeEdgeId = `route-${sourceNodeId}-${centralNodeId}-${incomingInterface}`;
+          // Create routing path edge (directional: source -> target)
+          const routeEdgeId = `route-${sourceNodeId}-${targetNodeId}-${incomingInterface}`;
           if (!edgeMap.has(routeEdgeId)) {
             edges.push({
               id: routeEdgeId,
               from: sourceNodeId,
-              to: centralNodeId,
+              to: targetNodeId,
               label: `via ${incomingInterface}`,
               traffic: 0,
               dashes: true,

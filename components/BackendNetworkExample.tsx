@@ -65,52 +65,47 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     loadBackendData()
   }, [darkMode])
 
-  // Helper: compute connected interfaces for a given node by scanning all node_route_infos
+  // Helper: compute connected interfaces for a given node by scanning physical nodes/edges
+  // Only show PHYSICAL (direct) connections - exclude route edges to avoid duplicates
   const computeConnectedInterfaces = useCallback((nodeId: string) => {
+    if (!nodeId || !rawBackendData) return []
+    // canonicalize nodeId: if it looks like an IPv6, extract short id
+    const canonicalId = (nodeId && nodeId.toString().includes(':')) ? NetworkDataAdapter.extractLastHex(nodeId) : nodeId
+    const phys = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
+    const edges = phys.edges || []
     const conns: Array<{ interface: string; neighbor: string }> = []
-    const infos = rawBackendData?.network_map?.node_route_infos || []
-    const target = (nodeId || '').toString().trim()
-    if (!target) return []
 
-    for (const nodeInfo of infos) {
-      const owner = (nodeInfo.node_name || '').toString().trim()
-
-      // If nodeInfo describes the queried node, include its neigh_infos (local view)
-      if (owner && owner === target) {
-        for (const neigh of nodeInfo.neigh_infos || []) {
-          const neighNode = (neigh.neigh_node || neigh.neighbor || '').toString().trim()
-          const iface = (neigh.neigh_interface || neigh.interface || '').toString().trim()
-          if (neighNode) {
-            conns.push({ interface: iface || 'unknown', neighbor: neighNode })
-          }
-        }
-      }
-
-      // If other nodes list the queried node as a neighbor, include that interface pointing to the other node
-      for (const neigh of nodeInfo.neigh_infos || []) {
-        const neighNode = (neigh.neigh_node || neigh.neighbor || '').toString().trim()
-        const iface = (neigh.neigh_interface || neigh.interface || '').toString().trim()
-        if (neighNode && neighNode === target) {
-          conns.push({ interface: iface || 'unknown', neighbor: owner || nodeInfo.node_name })
+    for (const e of edges) {
+      // Only include physical (direct) connections
+      if (e.edgeType === 'direct') {
+        if (e.from === canonicalId) {
+          // Use interfaceA (the interface on the 'from' side) if available
+          const iface = e.interfaceA || e.label || 'unknown'
+          conns.push({ interface: iface, neighbor: e.to })
+        } else if (e.to === canonicalId) {
+          // Use interfaceB (the interface on the 'to' side) if available
+          const iface = e.interfaceB || e.label || 'unknown'
+          conns.push({ interface: iface, neighbor: e.from })
         }
       }
     }
 
     // Deduplicate by normalized interface+neighbor, and sort
+    // Also filter out self-connections (where neighbor is the same as the node itself)
     const seen = new Set<string>()
     const dedup: Array<{ interface: string; neighbor: string }> = []
     for (const c of conns) {
       const iface = (c.interface || '').toString().trim()
       const neigh = (c.neighbor || '').toString().trim()
       if (!neigh) continue
+      // Skip self-connections
+      if (neigh.toLowerCase() === canonicalId.toLowerCase()) continue
       const key = `${iface.toLowerCase()}::${neigh.toLowerCase()}`
       if (!seen.has(key)) {
         seen.add(key)
         dedup.push({ interface: iface || 'unknown', neighbor: neigh })
       }
     }
-
-    // Sort by interface name then neighbor
     dedup.sort((a, b) => a.interface.localeCompare(b.interface) || a.neighbor.localeCompare(b.neighbor))
     return dedup
   }, [rawBackendData])
@@ -132,17 +127,12 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       return;
     }
 
-    // Find backend node info for statistics
-    let backendNodeInfo = null;
-    for (const nodeInfo of rawBackendData.network_map?.node_route_infos || []) {
-      if (nodeInfo.node_name === nodeData.id) {
-        backendNodeInfo = nodeInfo;
-        break;
-      }
-    }
+    // Find backend-equivalent node info using the converted physical data
+    const phys = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
+    const backendNodeInfo = (phys.nodes || []).find((n: any) => n.id === nodeData.id) || null
 
     const connectedInterfaces = computeConnectedInterfaces(nodeData.id)
-    const mergedNode = { ...nodeData, ...backendNodeInfo, connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
+    const mergedNode = { ...nodeData, ...(backendNodeInfo || {}), connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
     setSelectedNode(mergedNode);
   }, [rawBackendData, computeConnectedInterfaces])
 
@@ -171,15 +161,11 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     }
   }
 
-  const sourceNodes =
-    rawBackendData?.network_map?.node_route_infos
-      ?.flatMap((nodeInfo: any) =>
-        (nodeInfo.route_infos || []).map((routeInfo: any) => ({
-          id: routeInfo.source_node,
-          label: `Node ${routeInfo.source_node}`,
-        })),
-      )
-      .filter((node: any, index: number, self: any[]) => index === self.findIndex((n) => n.id === node.id)) || []
+  // Build source list from all physical nodes (so every visible node is selectable as a source)
+  const physForList = rawBackendData ? NetworkDataAdapter.convertPhysicalOnly(rawBackendData) : { nodes: [], edges: [] }
+  const sourceNodes = (physForList.nodes || [])
+    .map((n: any) => ({ id: n.id, label: n.label || `Node ${n.id}` }))
+    .filter((node: any, index: number, self: any[]) => node.id && index === self.findIndex((m) => m.id === node.id))
 
   // Build full node list (physical) for target selection
   const physicalList = rawBackendData ? NetworkDataAdapter.convertPhysicalOnly(rawBackendData) : { nodes: [], edges: [] }
@@ -196,7 +182,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       return
     }
     try {
-      const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget)
+      const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget, rawBackendData)
       const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
       const highlightEdgeStyle = { color: highlightColor, width: 6, dashes: true, shadow: true, animation: true }
       const highlightNodeStyle = { color: { background: highlightColor, border: highlightColor }, borderWidth: 4 }
@@ -372,7 +358,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div className="legend-route" style={{ width: "16px", height: "16px", borderRadius: "50%" }}></div>
-            <span>Highlighted Multicast Route</span>
+            <span>Highlighted Node</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div className="legend-phys" style={{ width: "16px", height: "2px", borderRadius: "1px" }}></div>

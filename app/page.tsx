@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import BackendNetworkExample from "@/components/BackendNetworkExample"
-import DataTest from "@/components/DataTest"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import DarkModeToggle from "@/components/DarkModeToggle"
 

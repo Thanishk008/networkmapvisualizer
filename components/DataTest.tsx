@@ -59,7 +59,7 @@ export default function DataTest() {
 
           <h4>Nodes by Type:</h4>
           <ul>
-            <li>Central: {data.nodes?.filter((n: any) => n.type === "central").length || 0}</li>
+            <li>Target: {data.nodes?.filter((n: any) => n.type === "target").length || 0}</li>
             <li>Neighbor: {data.nodes?.filter((n: any) => n.type === "neighbor").length || 0}</li>
             <li>Source: {data.nodes?.filter((n: any) => n.type === "source").length || 0}</li>
           </ul>

@@ -45,7 +45,7 @@ const getNetworkOptions = (darkMode: boolean) => ({
     },
   },
   groups: {
-    central: {
+    target: {
       color: {
         background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4ECDC4",
         border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#45B7B8",
@@ -60,9 +60,10 @@ const getNetworkOptions = (darkMode: boolean) => ({
       size: 20,
     },
     source: {
+      // Source nodes should not be auto-highlighted; use the physical link palette
       color: {
-        background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || "#FFD166",
-        border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || "#3A9BC1",
+        background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4ECDC4",
+        border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#45B7B8",
       },
       size: 15,
     },
@@ -78,14 +79,10 @@ const getNetworkOptions = (darkMode: boolean) => ({
     enabled: false,
   },
   layout: {
-    randomSeed: 42,
-    improvedLayout: true,
+    randomSeed: undefined,
+    improvedLayout: false,
     hierarchical: {
-      enabled: true,
-      direction: "UD",
-      sortMethod: "directed",
-      nodeSpacing: 150,
-      levelSeparation: 200,
+      enabled: false,
     },
   },
   interaction: {
@@ -93,8 +90,8 @@ const getNetworkOptions = (darkMode: boolean) => ({
     tooltipDelay: 300,
     hideEdgesOnDrag: false,
     hideNodesOnDrag: false,
-    dragNodes: false,
-    dragView: false,
+    dragNodes: true,
+    dragView: true,
     zoomView: true,
   },
 })
@@ -151,7 +148,94 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         return rest;
       });
 
-      const updatedNetworkData = { nodes, edges: updatedEdges };
+      // Dynamic layout algorithm without physics
+      // Calculate positions based on graph structure using a layered approach
+      
+      // Build adjacency map from edges
+      const adjacencyMap = new Map<string, Set<string>>();
+      nodes.forEach((node: any) => {
+        adjacencyMap.set(node.id, new Set());
+      });
+      
+      updatedEdges.forEach((edge: any) => {
+        if (edge.edgeType === 'direct') {
+          adjacencyMap.get(edge.from)?.add(edge.to);
+          adjacencyMap.get(edge.to)?.add(edge.from);
+        }
+      });
+      
+      // Find the node with type 'target' or the most connected node as root
+      let rootNode = nodes.find((n: any) => n.type === 'target');
+      if (!rootNode) {
+        // Find most connected node
+        let maxConnections = 0;
+        nodes.forEach((node: any) => {
+          const connections = adjacencyMap.get(node.id)?.size || 0;
+          if (connections > maxConnections) {
+            maxConnections = connections;
+            rootNode = node;
+          }
+        });
+      }
+      
+      // BFS to assign layers
+      const layers = new Map<string, number>();
+      const visited = new Set<string>();
+      const queue: string[] = [rootNode.id];
+      layers.set(rootNode.id, 0);
+      visited.add(rootNode.id);
+      
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        const currentLayer = layers.get(current)!;
+        
+        adjacencyMap.get(current)?.forEach(neighbor => {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            layers.set(neighbor, currentLayer + 1);
+            queue.push(neighbor);
+          }
+        });
+      }
+      
+      // Group nodes by layer
+      const layerGroups = new Map<number, string[]>();
+      layers.forEach((layer, nodeId) => {
+        if (!layerGroups.has(layer)) {
+          layerGroups.set(layer, []);
+        }
+        layerGroups.get(layer)!.push(nodeId);
+      });
+      
+      // Calculate positions
+      const positionMap: Record<string, { x: number, y: number }> = {};
+      const verticalSpacing = 250;
+      const horizontalSpacing = 300;
+      
+      layerGroups.forEach((nodeIds, layer) => {
+        const width = (nodeIds.length - 1) * horizontalSpacing;
+        const startX = -width / 2;
+        
+        nodeIds.forEach((nodeId, index) => {
+          positionMap[nodeId] = {
+            x: startX + index * horizontalSpacing,
+            y: layer * verticalSpacing
+          };
+        });
+      });
+      
+      // Apply positions to nodes
+      const positionedNodes = nodes.map((node: any) => {
+        const position = positionMap[node.id] || { x: 0, y: 0 };
+        return {
+          ...node,
+          x: position.x,
+          y: position.y,
+          fixed: { x: true, y: true }
+        };
+      });
+
+      const updatedNetworkData = { nodes: positionedNodes, edges: updatedEdges };
 
       const network = new Network(containerRef.current, updatedNetworkData, options);
       networkRef.current = network;

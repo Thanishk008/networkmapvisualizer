@@ -2,123 +2,392 @@ import { DataSet } from "vis-data"
 
 export class NetworkDataAdapter {
   /**
-   * Find shortest path between source and target node IDs using BFS.
+   * Find path between source and target node IDs using the route_info table.
+   * This method traces the path by following route entries from each intermediate
+   * node toward the target, using the actual routing information from the backend JSON.
    * Returns { pathEdges: string[], pathNodes: string[] } or throws error.
    */
-  /**
-   * Find shortest path between source and target node IDs using BFS.
-   * By default the search treats edges as bidirectional (undirected) so a path
-   * can be found regardless of edge 'from' -> 'to' direction. Set `bidirectional=false`
-   * to enforce directed-only traversal.
-   * Returns { pathEdges: string[], pathNodes: string[] } or throws error.
-   */
-  static findPath(nodes: any[], edges: any[], sourceId: string, targetId: string, bidirectional = true) {
+  static findPath(nodes: any[], edges: any[], sourceId: string, targetId: string, backendJson?: any) {
     if (!sourceId || !targetId) throw new Error("Source and target must be provided")
     if (sourceId === targetId) return { pathEdges: [], pathNodes: [sourceId] }
+    
     const nodeIds = new Set(nodes.map(n => n.id))
     if (!nodeIds.has(sourceId)) throw new Error(`Source node '${sourceId}' not found`)
     if (!nodeIds.has(targetId)) throw new Error(`Target node '${targetId}' not found`)
-    // Build adjacency list. By default add both directions so the search is
-    // effectively undirected while preserving the original edge id (this
-    // allows highlighting the vis-network edge even when traversing the
-    // reverse direction).
-    const adj = new Map()
-    edges.forEach(e => {
-      if (!adj.has(e.from)) adj.set(e.from, [])
-      adj.get(e.from).push({ to: e.to, edgeId: e.id })
-      if (bidirectional) {
-        if (!adj.has(e.to)) adj.set(e.to, [])
-        // add reverse neighbor that records the same edge id
-        adj.get(e.to).push({ to: e.from, edgeId: e.id })
+
+    // If backendJson with route_info is provided, use route-based pathfinding
+    if (backendJson && backendJson.network_map) {
+      return this.findPathUsingRouteInfo(sourceId, targetId, backendJson, edges)
+    }
+
+    // Fallback to BFS-based pathfinding if route_info not available
+    return this.findPathBFS(sourceId, targetId, edges, true)
+  }
+
+  /**
+   * Route-based pathfinding: Follow the route_info table from the backend JSON.
+   * 
+   * The route_info table shows how traffic FROM a source node reaches each node.
+   * To support bidirectional pathfinding, we:
+   * 1. Try direct neighbor connection (single hop)
+   * 2. Try forward direction (target's route_info has entry for source)
+   * 3. Try reverse direction (source's route_info has entry for target, then reverse the path)
+   */
+  private static findPathUsingRouteInfo(sourceId: string, targetId: string, backendJson: any, edges: any[]) {
+    // Helper to normalize node IDs (same logic as in convertPhysicalOnly)
+    const normalizeId = (raw: any) => {
+      if (!raw) return { id: null, fullAddress: null }
+      const str = typeof raw === 'string' ? raw : String(raw)
+      const trimmed = str.trim()
+      if (!trimmed) return { id: null, fullAddress: null }
+      // Extract short form: last segment after final ':'
+      const parts = trimmed.split(':')
+      const shortId = parts[parts.length - 1]
+      return { id: shortId, fullAddress: trimmed }
+    }
+
+    // Check if source and target are direct neighbors (single hop)
+    const directEdge = this.findEdgeBetween(edges, sourceId, targetId)
+    if (directEdge) {
+      // Look for a physical (direct) edge only, not route edges
+      const edge = edges.find(e => e.id === directEdge && e.edgeType === 'direct')
+      if (edge) {
+        return { pathEdges: [directEdge], pathNodes: [sourceId, targetId] }
       }
-    })
+    }
 
-    // BFS
-    type PathStep = { from: string, to: string, edgeId: string };
-    const queue: Array<[string, PathStep[]]> = [[sourceId, []]];
-    const visited = new Set([sourceId]);
-
-    while (queue.length) {
-      const next = queue.shift();
-      if (!next) break;
-      const [current, path] = next;
-
-      if (current === targetId) {
-        const pathNodes = [sourceId];
-        const pathEdges = [];
-        for (const step of path) {
-          pathNodes.push(step.to);
-          pathEdges.push(step.edgeId);
-        }
-        return { pathEdges, pathNodes };
-      }
-
-      const neighbors = adj.get(current) || [];
-      for (const neighbor of neighbors) {
-        if (!visited.has(neighbor.to)) {
-          visited.add(neighbor.to);
-          queue.push([neighbor.to, [...path, { from: current, to: neighbor.to, edgeId: neighbor.edgeId }]]);
+    // Build routing tables:
+    // - Forward: destination -> source -> next_hop (how to reach destination from source)
+    // - Reverse: source -> destination -> next_hop (reverse routing)
+    const forwardRoutes = new Map<string, Map<string, { nextHop: string, interface: string }>>()
+    
+    for (const entry of backendJson.network_map) {
+      const { id: nodeId } = normalizeId(entry.node_name)
+      if (!nodeId) continue
+      
+      const routes = entry.route_info || []
+      for (const route of routes) {
+        const { id: srcId } = normalizeId(route.source_node || route.source)
+        const { id: nextHopId } = normalizeId(route.iif_neigh_node || route.next_hop)
+        const iface = route.incoming_interface || route.iif || ''
+        
+        if (srcId && nextHopId) {
+          if (!forwardRoutes.has(nodeId)) {
+            forwardRoutes.set(nodeId, new Map())
+          }
+          forwardRoutes.get(nodeId)!.set(srcId, { nextHop: nextHopId, interface: iface })
         }
       }
     }
 
-    console.error(`No path found from '${sourceId}' to '${targetId}'`);
+    // Try forward direction: source -> ... -> target
+    try {
+      return this.traceRouteForward(sourceId, targetId, forwardRoutes, edges, normalizeId)
+    } catch (err) {
+      // Forward failed, try reverse direction
+    }
+
+    // Try reverse direction: target -> ... -> source, then reverse the path
+    try {
+      const reversePath = this.traceRouteForward(targetId, sourceId, forwardRoutes, edges, normalizeId)
+      // Reverse the nodes and edges
+      return {
+        pathNodes: reversePath.pathNodes.reverse(),
+        pathEdges: reversePath.pathEdges.reverse()
+      }
+    } catch (err) {
+      throw new Error(`No route found from '${sourceId}' to '${targetId}' in either direction`)
+    }
+  }
+
+  /**
+   * Trace a route forward using the routing table
+   */
+  private static traceRouteForward(
+    sourceId: string, 
+    targetId: string, 
+    forwardRoutes: Map<string, Map<string, { nextHop: string, interface: string }>>,
+    edges: any[],
+    normalizeId: (raw: any) => { id: string | null, fullAddress: string | null }
+  ) {
+    const pathNodes: string[] = []
+    const pathEdges: string[] = []
+    
+    let currentNode = targetId
+    const visited = new Set<string>([currentNode])
+    const maxHops = 20
+    let hops = 0
+
+    while (currentNode !== sourceId && hops < maxHops) {
+      hops++
+      const routes = forwardRoutes.get(currentNode)
+      
+      if (!routes || !routes.has(sourceId)) {
+        throw new Error(`No route from '${sourceId}' to '${targetId}' at node '${currentNode}'`)
+      }
+
+      const routeEntry = routes.get(sourceId)!
+      const nextHopId = routeEntry.nextHop
+
+      if (visited.has(nextHopId)) {
+        throw new Error(`Routing loop detected at '${currentNode}' -> '${nextHopId}'`)
+      }
+
+      // Find the edge between currentNode and nextHopId
+      const edgeId = this.findEdgeBetween(edges, nextHopId, currentNode)
+      if (!edgeId) {
+        throw new Error(`No edge found between '${nextHopId}' and '${currentNode}'`)
+      }
+
+      pathNodes.unshift(nextHopId)
+      pathEdges.unshift(edgeId)
+      visited.add(nextHopId)
+      currentNode = nextHopId
+    }
+
+    if (currentNode !== sourceId) {
+      throw new Error(`Path tracing exceeded maximum hops (${maxHops})`)
+    }
+
+    pathNodes.push(targetId)
+    return { pathEdges, pathNodes }
+  }
+
+  /**
+   * Helper to find an edge ID between two nodes (works with bidirectional physical links)
+   */
+  private static findEdgeBetween(edges: any[], nodeA: string, nodeB: string): string | null {
+    for (const edge of edges) {
+      if (edge.hidden || edge.redundant) continue // Skip hidden/redundant edges
+      if ((edge.from === nodeA && edge.to === nodeB) || 
+          (edge.from === nodeB && edge.to === nodeA)) {
+        return edge.id
+      }
+    }
+    return null
+  }
+
+  /**
+   * Fallback BFS-based pathfinding (original implementation)
+   */
+  private static findPathBFS(sourceId: string, targetId: string, edges: any[], bidirectional = true) {
+    const adj = new Map<string, Array<{ to: string; edgeId: string }>>()
+    edges.forEach((e: any) => {
+      const from = e.from
+      const to = e.to
+      const id = e.id || e.edgeId || `${from}-${to}`
+      const type = e.edgeType || e.type || undefined
+
+      if (!adj.has(from)) adj.set(from, [])
+      if (!adj.has(to)) adj.set(to, [])
+
+      if (type === 'direct') {
+        adj.get(from)!.push({ to, edgeId: id })
+        adj.get(to)!.push({ to: from, edgeId: id })
+      } else if (type === 'route') {
+        adj.get(from)!.push({ to, edgeId: id })
+      } else {
+        adj.get(from)!.push({ to, edgeId: id })
+        if (bidirectional) adj.get(to)!.push({ to: from, edgeId: id })
+      }
+    })
+
+    type PathStep = { from: string, to: string, edgeId: string }
+    const queue: Array<[string, PathStep[]]> = [[sourceId, []]]
+    const visited = new Set([sourceId])
+
+    while (queue.length) {
+      const next = queue.shift()
+      if (!next) break
+      const [current, path] = next
+
+      if (current === targetId) {
+        const pathNodes = [sourceId]
+        const pathEdges = []
+        for (const step of path) {
+          pathNodes.push(step.to)
+          pathEdges.push(step.edgeId)
+        }
+        return { pathEdges, pathNodes }
+      }
+
+      const neighbors = adj.get(current) || []
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor.to)) {
+          visited.add(neighbor.to)
+          queue.push([neighbor.to, [...path, { from: current, to: neighbor.to, edgeId: neighbor.edgeId }]])
+        }
+      }
+    }
+
     throw new Error(`No path found from '${sourceId}' to '${targetId}'`)
   }
   static convertPhysicalOnly(backendJson: any) {
-    if (!backendJson || !backendJson.network_map || !backendJson.network_map.node_route_infos) {
-      throw new Error("Invalid backend JSON format - missing network_map.node_route_infos")
-    }
-    const nodeRouteInfos = backendJson.network_map.node_route_infos
+    // New format: top-level node object with keys like `node_name`, `neigh_ip_info`, `local_ip_info`, `route_info`.
+    if (!backendJson) throw new Error("Invalid backend JSON format - missing content")
+
     const nodes: any[] = []
     const edges: any[] = []
-    const nodeMap = new Map()
-    const edgeMap = new Set()
+    const nodeMap = new Map<string, boolean>()
+    const edgeMap = new Set<string>()
 
-    nodeRouteInfos.forEach((nodeInfo: any) => {
-      const centralNodeId = nodeInfo.node_name
-      if (!nodeMap.has(centralNodeId)) {
-        nodes.push({
-          id: centralNodeId,
-          label: `Node ${centralNodeId}`,
-          type: "central",
-        })
-        nodeMap.set(centralNodeId, true)
+    // Helper to add a node only once. If a fullAddress is provided, attach it
+    // but keep the canonical (short) id for graph operations.
+    const addNode = (id: string, opts: any = {}) => {
+      if (!id) return
+      if (!nodeMap.has(id)) {
+        const nodeObj: any = { id, label: `Node ${id}`, ...opts }
+        // preserve any fullAddress provided in opts
+        if (opts && opts.fullAddress) nodeObj.fullAddress = opts.fullAddress
+        nodes.push(nodeObj)
+        nodeMap.set(id, true)
+      } else if (opts && opts.fullAddress) {
+        // If node exists but we have a fullAddress, attach it
+        const existing = nodes.find((n) => n.id === id)
+        if (existing && !existing.fullAddress) existing.fullAddress = opts.fullAddress
       }
-      if (nodeInfo.neigh_infos) {
-        nodeInfo.neigh_infos.forEach((neighInfo: any) => {
-          const neighborId = neighInfo.neigh_node
-          const interfaceType = neighInfo.interface
-          if (!nodeMap.has(neighborId)) {
-            nodes.push({
-              id: neighborId,
-              label: `Node ${neighborId}`,
-              type: "neighbor",
-              interface: interfaceType,
-            })
-            nodeMap.set(neighborId, true)
-          }
-          const directEdgeId = `direct-${centralNodeId}-${neighborId}`
-          // Normalize undirected direct edge id so the link between two nodes
-          // is represented only once even if both nodes list each other.
-          const [a, b] = [centralNodeId, neighborId].sort()
-          const normalizedDirectId = `direct-${a}-${b}`
-          if (!edgeMap.has(normalizedDirectId)) {
-            edges.push({
-              id: normalizedDirectId,
-              from: a,
-              to: b,
-              label: `${interfaceType}`,
-              edgeType: "direct",
-              width: 3,
-              color: "#4ECDC4",
-              dashes: false,
-            })
-            edgeMap.add(normalizedDirectId)
-          }
-        })
+    }
+
+    // Normalize ids: if the value looks like an IPv6 address, convert to
+    // the short hex token used elsewhere (last segment) while returning both
+    // the short id and the original full address when present.
+    const normalizeId = (raw: any) => {
+      if (raw === undefined || raw === null) return { id: '', fullAddress: undefined }
+      const s = raw.toString().trim()
+      if (!s) return { id: '', fullAddress: undefined }
+      if (s.includes(':')) {
+        return { id: this.extractLastHex(s), fullAddress: s }
       }
-    })
+      return { id: s, fullAddress: undefined }
+    }
+
+    // If the payload wraps nodes under `network_map` (new format), extract them;
+    // otherwise if the payload is an array treat it as entries; otherwise wrap
+    // a single node object into an array.
+    let nodeEntries: any[] = []
+    if (backendJson && backendJson.network_map) {
+      const nm = backendJson.network_map
+      if (Array.isArray(nm)) nodeEntries = nm
+      else {
+        const vals = Object.values(nm)
+        if (vals.length > 0 && vals.every((v: any) => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) {
+          nodeEntries = vals
+        } else {
+          nodeEntries = [nm]
+        }
+      }
+    } else if (Array.isArray(backendJson)) {
+      nodeEntries = backendJson
+    } else {
+      nodeEntries = [backendJson]
+    }
+
+    for (const entry of nodeEntries) {
+      const targetRaw = entry.node_name || entry.nodeName || entry.name
+      const { id: target, fullAddress: targetFull } = normalizeId(targetRaw)
+      if (!target) continue
+      // Use 'target' type to represent the destination node
+      addNode(target, { type: 'target', fullAddress: targetFull })
+
+      // Neighbors come from neigh_ip_info (IP-based) or neigh_list
+      // Preserve local interface info for the target node (do not create new nodes).
+      const localIfs = entry.local_ip_info || entry.local_ip_infos || []
+      if (Array.isArray(localIfs) && localIfs.length > 0) {
+        // attach localInterfaces metadata to the target node if available
+        const existingTarget = nodes.find((n) => n.id === target)
+        if (existingTarget) existingTarget.localInterfaces = localIfs.map((li: any) => ({ interface: li.interface || li.iface, ip: li.local_ip || li.ip || li.address }))
+      }
+
+      const neighInfos = entry.neigh_ip_info || entry.neigh_infos || entry.neigh_list || []
+      for (const n of neighInfos) {
+        // Prefer explicit neighbor id, otherwise use neigh_ip and normalize
+        const rawNeighbor = n.neigh_node || n.neigh || n.neigh_ip || n.id || undefined
+        const { id: neighborId, fullAddress: neighborFull } = normalizeId(rawNeighbor)
+        if (!neighborId) continue
+        addNode(neighborId, { type: 'neighbor', interface: n.interface || n.iface || undefined, fullAddress: neighborFull })
+
+        // canonicalize undirected physical link id so duplicate physical links are not added
+        const [a, b] = [target, neighborId].sort()
+        const eid = `direct-${a}-${b}`
+        if (!edgeMap.has(eid)) {
+          // Store interface information for both endpoints
+          // When target < neighborId alphabetically, target interface goes first
+          const targetInterface = n.interface || n.iface || 'link'
+          const edgeData: any = { 
+            id: eid, 
+            from: a, 
+            to: b, 
+            label: targetInterface, 
+            edgeType: 'direct', 
+            width: 3, 
+            color: '#4ECDC4', 
+            dashes: false 
+          }
+          // Store which interface belongs to which endpoint
+          if (target === a) {
+            edgeData.interfaceA = targetInterface
+          } else {
+            edgeData.interfaceB = targetInterface
+          }
+          edges.push(edgeData)
+          edgeMap.add(eid)
+        } else {
+          // Edge already exists, add the interface for this endpoint
+          const existingEdge = edges.find(e => e.id === eid)
+          if (existingEdge) {
+            const targetInterface = n.interface || n.iface || 'link'
+            if (target === a) {
+              existingEdge.interfaceA = targetInterface
+            } else {
+              existingEdge.interfaceB = targetInterface
+            }
+          }
+        }
+      }
+
+      // Routes may reference sources by IPv6 or by id; attempt to normalize
+      const routes = entry.route_info || entry.route_infos || []
+      for (const r of routes) {
+        const rawSource = r.source_node || r.source || r.source_ip || r.src || undefined
+        const { id: sourceId, fullAddress: sourceFull } = normalizeId(rawSource)
+        const incomingInterface = r.incoming_interface || r.iif || r.iface || r.via || ''
+        if (!sourceId) continue
+        const rawNextHop = r.iif_neigh_node || r.next_hop || r.nextHop || undefined
+        const { id: nextHopId, fullAddress: nextHopFull } = normalizeId(rawNextHop)
+        addNode(sourceId, { type: 'source', nextHop: nextHopId || undefined, viaInterface: incomingInterface, fullAddress: sourceFull })
+        // route edges are directional: from source -> target
+        const routeId = `route-${sourceId}-${target}-${incomingInterface || 'i'}`
+        if (!edgeMap.has(routeId)) {
+          // If a direct physical link already exists between these nodes, mark the
+          // route edge as redundant/hidden to avoid duplicate visual links. We
+          // still keep the route entry for pathfinding semantics, but it should
+          // not clutter the topology when a physical connection is present.
+          const a = [sourceId, target].sort()[0]
+          const b = [sourceId, target].sort()[1]
+          const directId = `direct-${a}-${b}`
+          const isRedundant = edgeMap.has(directId)
+
+          const routeEdge: any = { 
+            id: routeId, 
+            from: sourceId, 
+            to: target, 
+            label: `via ${incomingInterface || 'unknown'}`, 
+            dashes: true, 
+            edgeType: 'route', 
+            width: 1, 
+            nextHop: nextHopId || undefined,
+            // Hide ALL route edges by default - they're only used for pathfinding logic
+            hidden: true
+          }
+          if (isRedundant) {
+            routeEdge.redundant = true
+          }
+          edges.push(routeEdge)
+          edgeMap.add(routeId)
+        }
+      }
+    }
+
     return { nodes, edges }
   }
 
@@ -273,116 +542,39 @@ Latency: ${latency}`
   }
 
   static convertFromBackend(backendJson: any) {
-    if (!backendJson || !backendJson.network_map || !backendJson.network_map.node_route_infos) {
-      throw new Error("Invalid backend JSON format - missing network_map.node_route_infos")
+    // Accept the new backend JSON format. The payload may be:
+    // - an array of node entries
+    // - a single node entry
+    // - an object with a `network_map` property that is either an array or an object
+    if (!backendJson) throw new Error('Invalid backend JSON')
+
+    // If the new format nests nodes under `network_map`, extract them.
+    let entries: any[] = []
+    if (backendJson.network_map) {
+      const nm = backendJson.network_map
+      // Expect the new format: network_map is either an array of node entries
+      // or an object whose values are node entries. Do not accept legacy
+      // `node_route_infos` payloads anymore.
+      if (Array.isArray(nm)) entries = nm
+      else {
+        // If network_map is an object whose values are node objects, use them;
+        // otherwise treat it as a single node wrapped in an array.
+        const vals = Object.values(nm)
+        if (vals.length > 0 && vals.every((v: any) => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) {
+          entries = vals
+        } else {
+          entries = [nm]
+        }
+      }
+    } else if (Array.isArray(backendJson)) {
+      entries = backendJson
+    } else if (backendJson.node_name || backendJson.neigh_ip_info || backendJson.route_info || backendJson.neigh_infos) {
+      entries = [backendJson]
+    } else {
+      throw new Error('Unrecognized backend JSON format for new schema')
     }
 
-    const nodeRouteInfos = backendJson.network_map.node_route_infos
-    const nodes: any[] = []
-    const edges: any[] = []
-    const nodeMap = new Map()
-    const edgeMap = new Set()
-
-    nodeRouteInfos.forEach((nodeInfo: any) => {
-      const centralNodeId = nodeInfo.node_name
-
-      if (!nodeMap.has(centralNodeId)) {
-        nodes.push({
-          id: centralNodeId,
-          label: `Node ${centralNodeId}`,
-          type: "central",
-          rx: "0 Mbps",
-          tx: "0 Mbps",
-          traffic: "0%",
-          latency: "0ms",
-          routeCount: nodeInfo.route_infos ? nodeInfo.route_infos.length : 0,
-          neighborCount: nodeInfo.neigh_infos ? nodeInfo.neigh_infos.length : 0,
-        })
-        nodeMap.set(centralNodeId, true)
-      }
-
-      if (nodeInfo.neigh_infos) {
-        nodeInfo.neigh_infos.forEach((neighInfo: any) => {
-          const neighborId = neighInfo.neigh_node
-          const interfaceType = neighInfo.interface
-
-          if (!nodeMap.has(neighborId)) {
-            nodes.push({
-              id: neighborId,
-              label: `Node ${neighborId}`,
-              type: "neighbor",
-              rx: "0 Mbps",
-              tx: "0 Mbps",
-              traffic: "0%",
-              latency: "0ms",
-              interface: interfaceType,
-            })
-            nodeMap.set(neighborId, true)
-          }
-
-          const directEdgeId = `direct-${centralNodeId}-${neighborId}`
-            // Normalize undirected direct edge id so the link between two nodes
-            // is represented only once even if both nodes list each other.
-            const [a, b] = [centralNodeId, neighborId].sort()
-            const normalizedDirectId = `direct-${a}-${b}`
-            if (!edgeMap.has(normalizedDirectId)) {
-              edges.push({
-                id: normalizedDirectId,
-                from: a,
-                to: b,
-                label: `${interfaceType}`,
-                traffic: 0,
-                edgeType: "direct",
-                width: 3,
-              })
-              edgeMap.add(normalizedDirectId)
-            }
-        })
-      }
-
-      if (nodeInfo.route_infos) {
-        nodeInfo.route_infos.forEach((routeInfo: any) => {
-          const sourceNodeId = routeInfo.source_node
-          const incomingInterface = routeInfo.incoming_interface
-          const nextHopNode = this.extractLastHex(routeInfo.iif_neigh_node)
-
-          if (!nodeMap.has(sourceNodeId)) {
-            nodes.push({
-              id: sourceNodeId,
-              label: `Node ${sourceNodeId}`,
-              type: "source",
-              rx: "0 Mbps",
-              tx: "0 Mbps",
-              traffic: "0%",
-              latency: "0ms",
-              nextHop: nextHopNode,
-              viaInterface: incomingInterface,
-              fullNextHopAddress: routeInfo.iif_neigh_node,
-            })
-            nodeMap.set(sourceNodeId, true)
-          }
-
-          const routeEdgeId = `route-${sourceNodeId}-${centralNodeId}-${incomingInterface}`
-          if (!edgeMap.has(routeEdgeId)) {
-            edges.push({
-              id: routeEdgeId,
-              from: sourceNodeId,
-              to: centralNodeId,
-              label: `via ${incomingInterface}`,
-              traffic: 0,
-              dashes: true,
-              edgeType: "route",
-              width: 1,
-              nextHop: nextHopNode,
-            })
-            edgeMap.add(routeEdgeId)
-          }
-        })
-      }
-    })
-
-    console.log(`Processed ${nodes.length} nodes and ${edges.length} edges from backend data`)
-    return { nodes, edges }
+    return this.convertPhysicalOnly(entries)
   }
 
   static extractLastHex(ipv6Address: string) {

@@ -44,7 +44,7 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
     padding: '15px',
     boxShadow: shadow,
     zIndex: 1000,
-    minWidth: '200px',
+    minWidth: '300px',
     fontFamily: 'Arial, sans-serif',
     fontSize: '12px',
   }
@@ -79,14 +79,19 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
 
   return (
     <div style={containerStyle}>
-      <div style={headerStyle}>
-        {headerLabel}: {stats.id}
-      </div>
+          <div style={headerStyle}>
+            {headerLabel}: {stats.label || stats.id}
+          </div>
 
-      <div style={statRowStyle}>
-        <span style={labelStyle}>Node ID:</span>
-        <span style={valueStyle}>{stats.id}</span>
-      </div>
+          <div style={statRowStyle}>
+            <span style={labelStyle}>Label:</span>
+            <span style={valueStyle}>{stats.label || stats.id}</span>
+          </div>
+
+          <div style={statRowStyle}>
+            <span style={labelStyle}>Node ID:</span>
+            <span style={valueStyle}>{nodeData.fullAddress || stats.id}</span>
+          </div>
 
       {(isSelectedSource || isSelectedTarget) && (
         <div style={statRowStyle}>
