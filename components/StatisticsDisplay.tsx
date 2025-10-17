@@ -23,7 +23,7 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
     fullNextHopAddress: nodeData.fullNextHopAddress,
     rx: nodeData.rx, 
     tx: nodeData.tx, 
-    connectedInterfaces: nodeData.connectedInterfaces, // <-- Added line
+    connectedInterfaces: nodeData.connectedInterfaces, 
   }
 
   // Colors adapt to theme
@@ -75,12 +75,12 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
 
   const isSelectedSource = selectedSource && selectedSource === stats.id
   const isSelectedTarget = selectedTarget && selectedTarget === stats.id
-  const headerLabel = isSelectedSource ? 'Source Node' : isSelectedTarget ? 'Target Node' : 'Node'
+  const headerLabel = isSelectedSource ? 'Source' : isSelectedTarget ? 'Target' : 'Node'
 
   return (
     <div style={containerStyle}>
           <div style={headerStyle}>
-            {headerLabel}: {stats.label || stats.id}
+            {headerLabel !== 'Node' ? `${headerLabel}: ${stats.label || stats.id}` : stats.label || stats.id}
           </div>
 
           <div style={statRowStyle}>
@@ -114,19 +114,6 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
         </div>
       )}
 
-      {stats.nextHop && (
-        <div style={statRowStyle}>
-          <span style={labelStyle}>Next Hop:</span>
-          <span style={valueStyle}>{stats.nextHop}</span>
-        </div>
-      )}
-
-      {stats.viaInterface && (
-        <div style={statRowStyle}>
-          <span style={labelStyle}>Via Interface:</span>
-          <span style={valueStyle}>{stats.viaInterface}</span>
-        </div>
-      )}
 
       {stats.rx !== undefined && (
         <div style={statRowStyle}>

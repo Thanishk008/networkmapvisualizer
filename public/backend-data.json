@@ -1,0 +1,161 @@
+{
+  "status":"SUCCESS",
+  "network_map":[
+ {
+ "node_name": "fireapp-VirtualBox",
+ "local_ip_info": [
+  {
+   "interface": "usb0",
+   "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+  },
+  {
+   "interface": "eth1",
+   "local_ip": "2001:db8::2b0:19ff:fe7a:14cc"
+  }
+ ],
+ "neigh_ip_info": [
+  {
+   "interface": "usb0",
+   "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+  },
+  {
+   "interface": "eth0",
+   "neigh_ip": "fe80::2b0:19ff:fe73:f453"
+  }
+ ],
+ "route_info": [
+  {
+   "incoming_interface": "usb0",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+  },
+  {
+   "incoming_interface": "usb0",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+  },
+  {
+   "incoming_interface": "eth0",
+   "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
+   "source_node": "fe80::2b0:19ff:fe73:f453"
+  }
+ ]
+ },
+ {
+ "node_name": "1576",
+ "local_ip_info": [
+  {
+   "interface": "usb0",
+   "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:1578"
+  },
+  {
+   "interface": "eth1",
+   "local_ip": "2001:db8::2b0:19ff:fe7a:1577"
+  }
+ ],
+ "neigh_ip_info": [
+  {
+   "interface": "usb0",
+   "neigh_ip": "fireapp-VirtualBox"
+  },
+  {
+   "interface": "usb1",
+   "neigh_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+  },
+  {
+   "interface": "eth1",
+   "neigh_ip": "fe80::2b0:19ff:fe73:f453"
+  }
+ ],
+ "route_info": [
+  {
+   "incoming_interface": "usb0",
+   "iif_neigh_node": "fireapp-VirtualBox",
+   "source_node": "fireapp-VirtualBox"
+  },
+  {
+   "incoming_interface": "eth1",
+   "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
+   "source_node": "fe80::2b0:19ff:fe73:f453"
+  },
+  {
+   "incoming_interface": "usb1",
+   "iif_neigh_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd",
+   "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+  }
+ ]
+ },
+ {
+ "node_name": "fe80::2b0:19ff:fe73:f453",
+ "local_ip_info": [
+  {
+   "interface": "eth0",
+   "local_ip": "fe80::2b0:19ff:fe73:f453"
+  },
+  {
+   "interface": "eth1",
+   "local_ip": "fe80::2b0:19ff:fe73:f454"
+  }
+ ],
+ "neigh_ip_info": [
+  {
+   "interface": "eth0",
+   "neigh_ip": "fireapp-VirtualBox"
+  },
+  {
+   "interface": "eth1",
+   "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+  }
+ ],
+ "route_info": [
+  {
+   "incoming_interface": "eth0",
+   "iif_neigh_node": "fireapp-VirtualBox",
+   "source_node": "fireapp-VirtualBox"
+  },
+  {
+   "incoming_interface": "eth1",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+  },
+  {
+   "incoming_interface": "eth1",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+  }
+ ]
+ },
+ {
+ "node_name": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd",
+ "local_ip_info": [
+  {
+   "interface": "usb0",
+   "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+  }
+ ],
+ "neigh_ip_info": [
+  {
+   "interface": "usb0",
+   "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+  }
+ ],
+ "route_info": [
+  {
+   "incoming_interface": "usb0",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+  },
+  {
+   "incoming_interface": "usb0",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "fireapp-VirtualBox"
+  },
+  {
+   "incoming_interface": "usb0",
+   "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
+   "source_node": "fe80::2b0:19ff:fe73:f453"
+  }
+ ]
+ }
+ ]
+}

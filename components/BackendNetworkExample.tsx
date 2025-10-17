@@ -202,11 +202,17 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     }
   }, [rawBackendData, selectedSource, selectedTarget, darkMode])
 
-  // When raw data or theme changes, reset to physical topology
+  // When raw data or theme changes, reapply path highlighting if it was previously shown
   useEffect(() => {
     if (!rawBackendData) return
-    const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
-    setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+    // Only re-highlight if the path was explicitly shown (pathHighlighted is true)
+    if (pathHighlighted && selectedSource && selectedTarget) {
+      computeAndHighlightPath()
+    } else {
+      // Otherwise, reset to physical topology without highlighting
+      const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
+      setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+    }
   }, [rawBackendData, darkMode])
 
   // Listen for a global refresh event so header can host the refresh button
@@ -234,7 +240,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   const showBtnStyle: React.CSSProperties = {
     ...btnBase,
     background: '#17a2b8',
-    color: '#fff',
+    color: '#000',
     boxShadow: pathLoading ? '0 6px 18px rgba(23,162,184,0.18)' : '0 4px 12px rgba(0,0,0,0.08)'
   }
   const clearBtnStyle: React.CSSProperties = {
