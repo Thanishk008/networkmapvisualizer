@@ -81,11 +81,15 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
         if (e.from === canonicalId) {
           // Use interfaceA (the interface on the 'from' side) if available
           const iface = e.interfaceA || e.label || 'unknown'
-          conns.push({ interface: iface, neighbor: e.to })
+          // Use the original neighbor IP stored in the edge
+          const neighborIp = e.neighborIpA || e.to
+          conns.push({ interface: iface, neighbor: neighborIp })
         } else if (e.to === canonicalId) {
           // Use interfaceB (the interface on the 'to' side) if available
           const iface = e.interfaceB || e.label || 'unknown'
-          conns.push({ interface: iface, neighbor: e.from })
+          // Use the original neighbor IP stored in the edge
+          const neighborIp = e.neighborIpB || e.from
+          conns.push({ interface: iface, neighbor: neighborIp })
         }
       }
     }
@@ -325,7 +329,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
         <div className="error-message">
           <strong>Error:</strong> {error}
           <div className="error-hint">
-            Make sure the sample-backend-data.json file is in the public folder and the server is running.
+            Make sure the data exists (JSON type) and the server is running.
           </div>
         </div>
       )}

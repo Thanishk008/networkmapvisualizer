@@ -93,6 +93,20 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
             <span style={valueStyle}>{nodeData.fullAddress || stats.id}</span>
           </div>
 
+      {nodeData.allLocalIps && nodeData.allLocalIps.length > 0 && (
+        <div style={{ ...statRowStyle, marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${borderColor}`, flexDirection: 'column', gap: '5px' }}>
+          <span style={{ ...labelStyle, marginBottom: '5px' }}>Local IP Addresses:</span>
+          <div style={{ marginLeft: '10px', fontSize: '11px' }}>
+            {nodeData.allLocalIps.map((ipInfo: any, index: number) => (
+              <div key={index} style={{ marginBottom: '3px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: labelColor, fontWeight: 'bold' }}>{ipInfo.interface}:</span>
+                <span style={{ color: valueColor, fontFamily: 'monospace', fontSize: '10px' }}>{ipInfo.ip}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {(isSelectedSource || isSelectedTarget) && (
         <div style={statRowStyle}>
           <span style={labelStyle}>Node Type:</span>

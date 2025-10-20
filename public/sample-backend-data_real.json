@@ -1,0 +1,97 @@
+{
+  "status": "COMMAND_INVALID",
+  "network_map": [
+      {
+        "nodeName": "Node00b0197a14cb",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:14cb"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:14cc"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:1573"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1573",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14cb"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1573",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1573"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1573",
+            "sourceNode": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a1573",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:1575:0:2b0:19ff:fe7a:1575"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:1573"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:1574"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:14cb"
+          },
+          {
+            "interface": "usb1",
+            "neighIp": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "fe80::4c35:230a:26e3:d1fd"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14cb",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1573"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14cb",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14cb"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14cb",
+            "sourceNode": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+          }
+        ]
+      }
+    ]
+}

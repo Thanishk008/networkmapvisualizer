@@ -225,8 +225,18 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       });
       
       // Apply positions to nodes
-      const positionedNodes = nodes.map((node: any) => {
-        const position = positionMap[node.id] || { x: 0, y: 0 };
+      const positionedNodes = nodes.map((node: any, index: number) => {
+        let position = positionMap[node.id];
+        
+        // If node wasn't positioned (disconnected or not in BFS), assign a default position
+        if (!position) {
+          const unpositionedOffset = 400;
+          position = {
+            x: (index % 3) * horizontalSpacing - horizontalSpacing,
+            y: Math.floor(index / 3) * verticalSpacing + unpositionedOffset
+          };
+        }
+        
         return {
           ...node,
           x: position.x,

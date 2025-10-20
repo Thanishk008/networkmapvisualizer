@@ -61,15 +61,51 @@ export class NetworkDataAdapter {
     // - Reverse: source -> destination -> next_hop (reverse routing)
     const forwardRoutes = new Map<string, Map<string, { nextHop: string, interface: string }>>()
     
+    // Build IP-to-NodeID mapping for pathfinding
+    const ipToNodeId = new Map<string, string>()
     for (const entry of backendJson.network_map) {
-      const { id: nodeId } = normalizeId(entry.node_name)
+      const nodeNameRaw = entry.node_name || entry.nodeName || entry.name
+      const { id: canonicalNodeId } = normalizeId(nodeNameRaw)
+      if (!canonicalNodeId) continue
+      
+      const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
+      for (const localIf of localIfs) {
+        const localIp = localIf.local_ip || localIf.localIp || localIf.ip
+        if (localIp) {
+          const { id: ipId } = normalizeId(localIp)
+          if (ipId) {
+            ipToNodeId.set(ipId, canonicalNodeId)
+          }
+        }
+      }
+    }
+    
+    for (const entry of backendJson.network_map) {
+      let { id: nodeId } = normalizeId(entry.node_name || entry.nodeName)
       if (!nodeId) continue
       
-      const routes = entry.route_info || []
+      // Map to canonical node ID
+      const mappedNodeId = ipToNodeId.get(nodeId)
+      if (mappedNodeId) {
+        nodeId = mappedNodeId
+      }
+      
+      const routes = entry.route_info || entry.routeInfo || []
       for (const route of routes) {
-        const { id: srcId } = normalizeId(route.source_node || route.source)
-        const { id: nextHopId } = normalizeId(route.iif_neigh_node || route.next_hop)
-        const iface = route.incoming_interface || route.iif || ''
+        let { id: srcId } = normalizeId(route.source_node || route.sourceNode || route.source)
+        let { id: nextHopId } = normalizeId(route.iif_neigh_node || route.iifNeighNode || route.next_hop)
+        const iface = route.incoming_interface || route.incomingInterface || route.iif || ''
+        
+        // Map source and nextHop to canonical node IDs
+        if (srcId) {
+          const mappedSrcId = ipToNodeId.get(srcId)
+          if (mappedSrcId) srcId = mappedSrcId
+        }
+        
+        if (nextHopId) {
+          const mappedNextHopId = ipToNodeId.get(nextHopId)
+          if (mappedNextHopId) nextHopId = mappedNextHopId
+        }
         
         if (srcId && nextHopId) {
           if (!forwardRoutes.has(nodeId)) {
@@ -236,15 +272,32 @@ export class NetworkDataAdapter {
     const addNode = (id: string, opts: any = {}) => {
       if (!id) return
       if (!nodeMap.has(id)) {
-        const nodeObj: any = { id, label: `Node ${id}`, ...opts }
+        // Use provided label or create one without "Node" prefix if id already contains "Node"
+        const defaultLabel = id.includes('Node') ? id : `Node ${id}`
+        const nodeObj: any = { id, label: opts.label || defaultLabel, ...opts }
         // preserve any fullAddress provided in opts
         if (opts && opts.fullAddress) nodeObj.fullAddress = opts.fullAddress
+        if (opts && opts.allLocalIps) nodeObj.allLocalIps = opts.allLocalIps
         nodes.push(nodeObj)
         nodeMap.set(id, true)
-      } else if (opts && opts.fullAddress) {
-        // If node exists but we have a fullAddress, attach it
+      } else {
+        // If node exists, update it with new properties
         const existing = nodes.find((n) => n.id === id)
-        if (existing && !existing.fullAddress) existing.fullAddress = opts.fullAddress
+        if (existing) {
+          if (opts && opts.fullAddress && !existing.fullAddress) {
+            existing.fullAddress = opts.fullAddress
+          }
+          if (opts && opts.allLocalIps && !existing.allLocalIps) {
+            existing.allLocalIps = opts.allLocalIps
+          }
+          // Update other properties if needed
+          if (opts && opts.type && !existing.type) {
+            existing.type = opts.type
+          }
+          if (opts && opts.label && !existing.label) {
+            existing.label = opts.label
+          }
+        }
       }
     }
 
@@ -282,29 +335,80 @@ export class NetworkDataAdapter {
       nodeEntries = [backendJson]
     }
 
+    // Build IP-to-NodeID mapping using localIpInfo
+    // Also store all local IPs for each node (to show in hover)
+    const ipToNodeId = new Map<string, string>()
+    const nodeLocalIps = new Map<string, Array<{interface: string, ip: string}>>()
+    
+    for (const entry of nodeEntries) {
+      const targetRaw = entry.node_name || entry.nodeName || entry.name
+      const { id: nodeId } = normalizeId(targetRaw)
+      if (!nodeId) continue
+      
+      const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
+      const allLocalIps: Array<{interface: string, ip: string}> = []
+      
+      for (const localIf of localIfs) {
+        const localIp = localIf.local_ip || localIf.localIp || localIf.ip
+        const iface = localIf.interface || 'unknown'
+        if (localIp) {
+          const { id: ipId } = normalizeId(localIp)
+          if (ipId) {
+            ipToNodeId.set(ipId, nodeId)
+            allLocalIps.push({ interface: iface, ip: localIp })
+          }
+        }
+      }
+      
+      nodeLocalIps.set(nodeId, allLocalIps)
+    }
+
     for (const entry of nodeEntries) {
       const targetRaw = entry.node_name || entry.nodeName || entry.name
       const { id: target, fullAddress: targetFull } = normalizeId(targetRaw)
       if (!target) continue
+      
+      // Attach all local IPs to the node for display in hover
+      const localIpsForNode = nodeLocalIps.get(target) || []
+      
       // Use 'target' type to represent the destination node
-      addNode(target, { type: 'target', fullAddress: targetFull })
+      addNode(target, { 
+        type: 'target', 
+        fullAddress: targetFull,
+        allLocalIps: localIpsForNode 
+      })
 
       // Neighbors come from neigh_ip_info (IP-based) or neigh_list
       // Preserve local interface info for the target node (do not create new nodes).
-      const localIfs = entry.local_ip_info || entry.local_ip_infos || []
+      const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
       if (Array.isArray(localIfs) && localIfs.length > 0) {
         // attach localInterfaces metadata to the target node if available
         const existingTarget = nodes.find((n) => n.id === target)
-        if (existingTarget) existingTarget.localInterfaces = localIfs.map((li: any) => ({ interface: li.interface || li.iface, ip: li.local_ip || li.ip || li.address }))
+        if (existingTarget) existingTarget.localInterfaces = localIfs.map((li: any) => ({ interface: li.interface || li.iface, ip: li.local_ip || li.localIp || li.ip || li.address }))
       }
 
-      const neighInfos = entry.neigh_ip_info || entry.neigh_infos || entry.neigh_list || []
+      const neighInfos = entry.neigh_ip_info || entry.neighIpInfo || entry.neigh_infos || entry.neigh_list || []
       for (const n of neighInfos) {
         // Prefer explicit neighbor id, otherwise use neigh_ip and normalize
-        const rawNeighbor = n.neigh_node || n.neigh || n.neigh_ip || n.id || undefined
-        const { id: neighborId, fullAddress: neighborFull } = normalizeId(rawNeighbor)
+        const rawNeighbor = n.neigh_node || n.neigh || n.neigh_ip || n.neighIp || n.id || undefined
+        let { id: neighborId, fullAddress: neighborFull } = normalizeId(rawNeighbor)
         if (!neighborId) continue
-        addNode(neighborId, { type: 'neighbor', interface: n.interface || n.iface || undefined, fullAddress: neighborFull })
+        
+        // Map neighbor IP to actual node ID if available
+        const mappedNodeId = ipToNodeId.get(neighborId)
+        if (mappedNodeId) {
+          neighborId = mappedNodeId
+        }
+        
+        // Get local IPs for this neighbor node
+        const neighborLocalIps = nodeLocalIps.get(neighborId) || []
+        
+        addNode(neighborId, { 
+          type: 'neighbor', 
+          interface: n.interface || n.iface || undefined, 
+          fullAddress: neighborFull,
+          allLocalIps: neighborLocalIps 
+        })
 
         // canonicalize undirected physical link id so duplicate physical links are not added
         const [a, b] = [target, neighborId].sort()
@@ -313,6 +417,7 @@ export class NetworkDataAdapter {
           // Store interface information for both endpoints
           // When target < neighborId alphabetically, target interface goes first
           const targetInterface = n.interface || n.iface || 'link'
+          const neighborIpAddress = rawNeighbor // Store the original neighbor IP
           const edgeData: any = { 
             id: eid, 
             from: a, 
@@ -323,11 +428,13 @@ export class NetworkDataAdapter {
             color: '#4ECDC4', 
             dashes: false 
           }
-          // Store which interface belongs to which endpoint
+          // Store which interface belongs to which endpoint and the neighbor IP
           if (target === a) {
             edgeData.interfaceA = targetInterface
+            edgeData.neighborIpA = neighborIpAddress
           } else {
             edgeData.interfaceB = targetInterface
+            edgeData.neighborIpB = neighborIpAddress
           }
           edges.push(edgeData)
           edgeMap.add(eid)
@@ -336,25 +443,53 @@ export class NetworkDataAdapter {
           const existingEdge = edges.find(e => e.id === eid)
           if (existingEdge) {
             const targetInterface = n.interface || n.iface || 'link'
+            const neighborIpAddress = rawNeighbor
             if (target === a) {
               existingEdge.interfaceA = targetInterface
+              existingEdge.neighborIpA = neighborIpAddress
             } else {
               existingEdge.interfaceB = targetInterface
+              existingEdge.neighborIpB = neighborIpAddress
             }
           }
         }
       }
 
       // Routes may reference sources by IPv6 or by id; attempt to normalize
-      const routes = entry.route_info || entry.route_infos || []
+      const routes = entry.route_info || entry.routeInfo || entry.route_infos || []
       for (const r of routes) {
-        const rawSource = r.source_node || r.source || r.source_ip || r.src || undefined
-        const { id: sourceId, fullAddress: sourceFull } = normalizeId(rawSource)
-        const incomingInterface = r.incoming_interface || r.iif || r.iface || r.via || ''
+        const rawSource = r.source_node || r.sourceNode || r.source || r.source_ip || r.src || undefined
+        let { id: sourceId, fullAddress: sourceFull } = normalizeId(rawSource)
+        const incomingInterface = r.incoming_interface || r.incomingInterface || r.iif || r.iface || r.via || ''
         if (!sourceId) continue
-        const rawNextHop = r.iif_neigh_node || r.next_hop || r.nextHop || undefined
-        const { id: nextHopId, fullAddress: nextHopFull } = normalizeId(rawNextHop)
-        addNode(sourceId, { type: 'source', nextHop: nextHopId || undefined, viaInterface: incomingInterface, fullAddress: sourceFull })
+        
+        // Map source IP to actual node ID if available
+        const mappedSourceId = ipToNodeId.get(sourceId)
+        if (mappedSourceId) {
+          sourceId = mappedSourceId
+        }
+        
+        const rawNextHop = r.iif_neigh_node || r.iifNeighNode || r.next_hop || r.nextHop || undefined
+        let { id: nextHopId, fullAddress: nextHopFull } = normalizeId(rawNextHop)
+        
+        // Map next hop IP to actual node ID if available
+        if (nextHopId) {
+          const mappedNextHopId = ipToNodeId.get(nextHopId)
+          if (mappedNextHopId) {
+            nextHopId = mappedNextHopId
+          }
+        }
+        
+        // Get local IPs for this source node
+        const sourceLocalIps = nodeLocalIps.get(sourceId) || []
+        
+        addNode(sourceId, { 
+          type: 'source', 
+          nextHop: nextHopId || undefined, 
+          viaInterface: incomingInterface, 
+          fullAddress: sourceFull,
+          allLocalIps: sourceLocalIps 
+        })
         // route edges are directional: from source -> target
         const routeId = `route-${sourceId}-${target}-${incomingInterface || 'i'}`
         if (!edgeMap.has(routeId)) {
