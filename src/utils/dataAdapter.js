@@ -11,15 +11,22 @@ export class NetworkDataAdapter {
     if (!backendJson) {
       throw new Error('Invalid backend JSON format - missing content')
     }
-    // Accept payloads where nodes are wrapped in a `network_map` property
+    // Accept payloads where nodes are wrapped in a `network_map` or `networkMap` property
     // (new schema), or where a raw array/single node was passed directly.
+    // Support both snake_case and camelCase field names
     let nodeRouteInfos = []
-    if (backendJson && backendJson.network_map) {
-      const nm = backendJson.network_map
+    const networkMapData = backendJson.network_map || backendJson.networkMap
+    if (networkMapData) {
+      // Handle nested structure: { networkMap: { nodeRouteInfo: [...] } }
+      let nm = networkMapData
+      if (nm.nodeRouteInfo || nm.node_route_info) {
+        nm = nm.nodeRouteInfo || nm.node_route_info
+      }
+      
       if (Array.isArray(nm)) nodeRouteInfos = nm
       else {
         const vals = Object.values(nm)
-        if (vals.length > 0 && vals.every(v => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) nodeRouteInfos = vals
+        if (vals.length > 0 && vals.every(v => v && (v.node_name || v.nodeName || v.neigh_ip_info || v.neighIpInfo || v.route_info || v.routeInfo || v.neigh_infos))) nodeRouteInfos = vals
         else nodeRouteInfos = [nm]
       }
     } else if (Array.isArray(backendJson)) {
@@ -31,11 +38,19 @@ export class NetworkDataAdapter {
     const edges = [];
     const nodeMap = new Map();
     const edgeMap = new Set();
-    // helper to normalize ids (IPv6 -> last hex segment)
+    // helper to normalize ids (IPv6 -> last hex segment, Node prefix -> extract hex)
     const normalizeId = (raw) => {
       if (raw === undefined || raw === null) return '';
       const s = raw.toString().trim();
       if (!s) return '';
+      
+      // Handle "Node00b0197a14cb" format - extract the last hex segment
+      if (s.startsWith('Node') && s.length > 4) {
+        const hexPart = s.substring(4); // Remove "Node" prefix
+        // Extract last 4 characters as the node ID
+        return hexPart.substring(hexPart.length - 4);
+      }
+      
       if (s.includes(':')) return this.extractLastHex(s);
       return s;
     };
@@ -64,7 +79,7 @@ export class NetworkDataAdapter {
       neighInfos.forEach(neighInfo => {
         const rawNeighbor = neighInfo.neigh_node || neighInfo.neigh || neighInfo.neigh_ip || neighInfo.id;
         const neighborId = normalizeId(rawNeighbor);
-        const interfaceType = neighInfo.interface || neighInfo.iface || undefined;
+        const interfaceType = neighInfo.interface || neighInfo.iface || 'link';
         if (!neighborId) return;
         if (!nodeMap.has(neighborId)) {
           nodes.push({ id: neighborId, label: `Node ${neighborId}`, type: 'neighbor', interface: interfaceType });
@@ -75,8 +90,40 @@ export class NetworkDataAdapter {
         const [a, b] = [targetNodeId, neighborId].sort();
         const directEdgeId = `direct-${a}-${b}`;
         if (!edgeMap.has(directEdgeId)) {
-          edges.push({ id: directEdgeId, from: a, to: b, label: interfaceType || 'link', edgeType: 'direct', width: 3, color: '#4ECDC4', dashes: false });
+          const edgeData = { 
+            id: directEdgeId, 
+            from: a, 
+            to: b, 
+            label: interfaceType, 
+            edgeType: 'direct', 
+            width: 3, 
+            color: '#4ECDC4', 
+            dashes: false 
+          };
+          // Store which interface belongs to which endpoint
+          if (targetNodeId === a) {
+            edgeData.interfaceA = interfaceType;
+          } else {
+            edgeData.interfaceB = interfaceType;
+          }
+          edges.push(edgeData);
           edgeMap.add(directEdgeId);
+        } else {
+          // Edge already exists, add the interface for this endpoint and update label
+          const existingEdge = edges.find(e => e.id === directEdgeId);
+          if (existingEdge) {
+            if (targetNodeId === a) {
+              existingEdge.interfaceA = interfaceType;
+            } else {
+              existingEdge.interfaceB = interfaceType;
+            }
+            // Update label to show both interfaces if both are known
+            if (existingEdge.interfaceA && existingEdge.interfaceB) {
+              existingEdge.label = `${existingEdge.interfaceA} ↔ ${existingEdge.interfaceB}`;
+            } else {
+              existingEdge.label = existingEdge.interfaceA || existingEdge.interfaceB || 'link';
+            }
+          }
         }
       });
 
@@ -100,6 +147,20 @@ export class NetworkDataAdapter {
         }
       });
     });
+    
+    // Final pass: ensure all direct edges have proper labels showing interface info
+    edges.forEach(edge => {
+      if (edge.edgeType === 'direct') {
+        if (edge.interfaceA && edge.interfaceB) {
+          edge.label = `${edge.interfaceA} ↔ ${edge.interfaceB}`;
+        } else if (edge.interfaceA || edge.interfaceB) {
+          edge.label = edge.interfaceA || edge.interfaceB;
+        } else if (!edge.label) {
+          edge.label = 'link';
+        }
+      }
+    });
+    
     return { nodes, edges };
   }
   
@@ -184,11 +245,23 @@ export class NetworkDataAdapter {
     const traffic = node.traffic || node.utilization || '0%';
     const latency = node.latency || '0ms';
     
-    return `${node.label || node.name || 'Node'}
-RX: ${rx}
+    let tooltip = `${node.label || node.name || 'Node'}`;
+    
+    // Add all local IPs if available
+    if (node.allLocalIps && node.allLocalIps.length > 0) {
+      tooltip += `\n\nLocal IPs:`;
+      node.allLocalIps.forEach(ipInfo => {
+        const shortIp = ipInfo.ip ? ipInfo.ip.split(':').pop() : ipInfo.ip;
+        tooltip += `\n  ${ipInfo.interface}: ${shortIp}`;
+      });
+    }
+    
+    tooltip += `\n\nRX: ${rx}
 TX: ${tx}
 Traffic: ${traffic}
 Latency: ${latency}`;
+    
+    return tooltip;
   }
 
   /**
@@ -304,16 +377,23 @@ Latency: ${latency}`;
       throw new Error('Invalid backend JSON')
     }
 
-    // The new backend schema places node entries under `network_map` which
+    // The new backend schema places node entries under `network_map` or `networkMap` which
     // may be an array or an object whose values are node entries. We no
     // longer support the legacy `network_map.node_route_infos` structure.
+    // Support both snake_case and camelCase field names
     let nodeRouteInfos = []
-    if (backendJson.network_map) {
-      const nm = backendJson.network_map
+    const networkMapData = backendJson.network_map || backendJson.networkMap
+    if (networkMapData) {
+      // Handle nested structure: { networkMap: { nodeRouteInfo: [...] } }
+      let nm = networkMapData
+      if (nm.nodeRouteInfo || nm.node_route_info) {
+        nm = nm.nodeRouteInfo || nm.node_route_info
+      }
+      
       if (Array.isArray(nm)) nodeRouteInfos = nm
       else {
         const vals = Object.values(nm)
-        if (vals.length > 0 && vals.every(v => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) {
+        if (vals.length > 0 && vals.every(v => v && (v.node_name || v.nodeName || v.neigh_ip_info || v.neighIpInfo || v.route_info || v.routeInfo || v.neigh_infos))) {
           nodeRouteInfos = vals
         } else {
           nodeRouteInfos = [nm]

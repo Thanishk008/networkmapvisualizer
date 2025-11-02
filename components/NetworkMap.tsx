@@ -141,10 +141,46 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       const options = getNetworkOptions(darkMode);
       options.edges.arrows = { to: { enabled: false } }; // Corrected type
 
-      // Exclude label from edges
+      // Process edges - add interface labels positioned along the edge
       const { nodes, edges } = visData;
+      
+      // Create a map to store interface info per node per edge
+      const nodeEdgeInterfaces = new Map<string, Array<{edgeId: string, interface: string, connectedTo: string}>>();
+      
+      edges.forEach((edge: any) => {
+        if (edge.edgeType === 'direct') {
+          const ifA = edge.interfaceA || '';
+          const ifB = edge.interfaceB || '';
+          
+          // Store interface info for node 'from' (a)
+          if (ifA) {
+            if (!nodeEdgeInterfaces.has(edge.from)) {
+              nodeEdgeInterfaces.set(edge.from, []);
+            }
+            nodeEdgeInterfaces.get(edge.from)!.push({
+              edgeId: edge.id,
+              interface: ifA,
+              connectedTo: edge.to
+            });
+          }
+          
+          // Store interface info for node 'to' (b)
+          if (ifB) {
+            if (!nodeEdgeInterfaces.has(edge.to)) {
+              nodeEdgeInterfaces.set(edge.to, []);
+            }
+            nodeEdgeInterfaces.get(edge.to)!.push({
+              edgeId: edge.id,
+              interface: ifB,
+              connectedTo: edge.from
+            });
+          }
+        }
+      });
+      
+      // Remove labels from edges - we'll display them differently
       const updatedEdges = edges.map((edge: any) => {
-        const { label, ...rest } = edge; // Remove the label property
+        const { label, ...rest } = edge;
         return rest;
       });
 
@@ -249,6 +285,76 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
 
       const network = new Network(containerRef.current, updatedNetworkData, options);
       networkRef.current = network;
+
+      // Custom rendering for interface labels on edges
+      network.on("afterDrawing", function (ctx) {
+        const positions = network.getPositions();
+        
+        edges.forEach((edge: any) => {
+          if (edge.edgeType === 'direct') {
+            const fromPos = positions[edge.from];
+            const toPos = positions[edge.to];
+            
+            if (!fromPos || !toPos) return;
+            
+            const ifA = edge.interfaceA || '';
+            const ifB = edge.interfaceB || '';
+            
+            // Calculate edge direction vector
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            
+            if (length === 0) return;
+            
+            // Normalize direction vector
+            const ndx = dx / length;
+            const ndy = dy / length;
+            
+            // Perpendicular vector for offset (rotate 90 degrees)
+            const perpX = -ndy;
+            const perpY = ndx;
+            
+            // Position labels at 25% from each end along the edge
+            // and offset perpendicular to avoid node labels
+            const offsetDistance = 8; // pixels perpendicular offset
+            const alongEdge = 0.25; // 25% from each node
+            
+            const fromLabelX = fromPos.x + dx * alongEdge + perpX * offsetDistance;
+            const fromLabelY = fromPos.y + dy * alongEdge + perpY * offsetDistance;
+            const toLabelX = toPos.x - dx * alongEdge + perpX * offsetDistance;
+            const toLabelY = toPos.y - dy * alongEdge + perpY * offsetDistance;
+            
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw background and label for interface A (near 'from' node)
+            if (ifA) {
+              const textWidth = ctx.measureText(ifA).width;
+              ctx.fillStyle = darkMode ? 'rgba(35, 39, 47, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+              ctx.fillRect(fromLabelX - textWidth/2 - 3, fromLabelY - 7, textWidth + 6, 14);
+              ctx.strokeStyle = darkMode ? 'rgba(100, 100, 100, 0.5)' : 'rgba(200, 200, 200, 0.5)';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(fromLabelX - textWidth/2 - 3, fromLabelY - 7, textWidth + 6, 14);
+              ctx.fillStyle = darkMode ? '#eee' : '#333';
+              ctx.fillText(ifA, fromLabelX, fromLabelY);
+            }
+            
+            // Draw background and label for interface B (near 'to' node)
+            if (ifB) {
+              const textWidth = ctx.measureText(ifB).width;
+              ctx.fillStyle = darkMode ? 'rgba(35, 39, 47, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+              ctx.fillRect(toLabelX - textWidth/2 - 3, toLabelY - 7, textWidth + 6, 14);
+              ctx.strokeStyle = darkMode ? 'rgba(100, 100, 100, 0.5)' : 'rgba(200, 200, 200, 0.5)';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(toLabelX - textWidth/2 - 3, toLabelY - 7, textWidth + 6, 14);
+              ctx.fillStyle = darkMode ? '#eee' : '#333';
+              ctx.fillText(ifB, toLabelX, toLabelY);
+            }
+          }
+        });
+      });
 
       network.on("hoverNode", (event) => {
         const nodeId = event.node

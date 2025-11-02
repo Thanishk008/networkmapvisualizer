@@ -9,9 +9,10 @@ import { NetworkDataAdapter } from "@/utils/dataAdapter"
 
 interface BackendNetworkExampleProps {
   darkMode: boolean
+  onNodeClick?: (nodeData: any) => void
 }
 
-export default function BackendNetworkExample({ darkMode }: BackendNetworkExampleProps) {
+export default function BackendNetworkExample({ darkMode, onNodeClick }: BackendNetworkExampleProps) {
   // Ensure hover is cleared on blur
   const handleNodeBlur = useCallback(() => {
     setHoveredNode(null);
@@ -35,7 +36,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch("/sample-backend-data.json")
+        const response = await fetch(`/sample-backend-data.json?t=${Date.now()}`)
         if (!response.ok) {
           throw new Error(`Failed to load backend data: ${response.status} ${response.statusText}`)
         }
@@ -66,14 +67,61 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   }, [darkMode])
 
   // Helper: compute connected interfaces for a given node by scanning physical nodes/edges
-  // Only show PHYSICAL (direct) connections - exclude route edges to avoid duplicates
   const computeConnectedInterfaces = useCallback((nodeId: string) => {
     if (!nodeId || !rawBackendData) return []
     // canonicalize nodeId: if it looks like an IPv6, extract short id
     const canonicalId = (nodeId && nodeId.toString().includes(':')) ? NetworkDataAdapter.extractLastHex(nodeId) : nodeId
     const phys = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     const edges = phys.edges || []
-    const conns: Array<{ interface: string; neighbor: string }> = []
+    const conns: Array<{ interface: string; neighbor: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
+
+    // Find the current node in backend data to get route_info statistics and local IPs
+    const networkMapData = rawBackendData?.network_map || rawBackendData?.networkMap
+    let networkMap: any[] = []
+    if (networkMapData) {
+      // Handle nested structure: { networkMap: { nodeRouteInfo: [...] } }
+      if (networkMapData.nodeRouteInfo || networkMapData.node_route_info) {
+        networkMap = networkMapData.nodeRouteInfo || networkMapData.node_route_info
+      } else if (Array.isArray(networkMapData)) {
+        networkMap = networkMapData
+      }
+    }
+    
+    const currentNode = networkMap.find((n: any) => {
+      const nodeName = n.node_name || n.nodeName
+      if (!nodeName) return false
+      
+      // Extract short ID from node name
+      let nodeShortId = nodeName
+      if (nodeName.toString().startsWith('Node') && nodeName.length > 4) {
+        const hexPart = nodeName.substring(4)
+        nodeShortId = hexPart.substring(hexPart.length - 4)
+      } else if (nodeName.toString().includes(':')) {
+        nodeShortId = NetworkDataAdapter.extractLastHex(nodeName)
+      }
+      
+      // Also extract short ID from nodeId for comparison
+      let searchShortId = nodeId
+      if (nodeId && nodeId.toString().includes(':')) {
+        searchShortId = NetworkDataAdapter.extractLastHex(nodeId)
+      }
+      
+      // Match using both canonical and short IDs
+      return nodeShortId === canonicalId || 
+             nodeShortId === searchShortId ||
+             nodeName === nodeId ||
+             nodeName === canonicalId
+    })
+
+    // Get local IPs for this node
+    const localIpInfo = currentNode?.local_ip_info || currentNode?.localIpInfo || []
+    
+    console.log(`[computeConnectedInterfaces] Node ${canonicalId}:`, {
+      currentNode: currentNode ? 'found' : 'NOT FOUND',
+      nodeName: currentNode?.node_name || currentNode?.nodeName,
+      localIpInfoCount: localIpInfo.length,
+      localIpInfo: localIpInfo
+    })
 
     for (const e of edges) {
       // Only include physical (direct) connections
@@ -83,13 +131,69 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
           const iface = e.interfaceA || e.label || 'unknown'
           // Use the original neighbor IP stored in the edge
           const neighborIp = e.neighborIpA || e.to
-          conns.push({ interface: iface, neighbor: neighborIp })
+          
+          // Find the local IP for this exact interface (eth0, eth1, usb0, usb1, etc.)
+          const localIpEntry = localIpInfo.find((li: any) => 
+            (li.interface || li.iface) === iface
+          )
+          
+          if (!localIpEntry && localIpInfo.length > 0) {
+            console.log(`[Connection FROM] Interface '${iface}' not found for node ${canonicalId}. Available:`, 
+              localIpInfo.map((li: any) => `${li.interface || li.iface || 'NO_INTERFACE'}: ${li.local_ip || li.localIp}`))
+          }
+          
+          const localIp = localIpEntry?.local_ip || localIpEntry?.localIp
+          
+          // Find RTT stats from route_info for this interface/neighbor
+          const routeInfo = currentNode?.route_info || currentNode?.routeInfo || []
+          const routeEntry = routeInfo.find((r: any) => {
+            const incomingIf = r.incoming_interface || r.incomingInterface || ''
+            return incomingIf === iface
+          })
+          
+          conns.push({ 
+            interface: iface, 
+            neighbor: neighborIp,
+            localIp: localIp,
+            rx_packets: routeEntry?.rx_packets,
+            tx_packets: routeEntry?.tx_packets,
+            rtt_ms: routeEntry?.rtt_ms,
+            mdev_rtt_ms: routeEntry?.mdev_rtt_ms
+          })
         } else if (e.to === canonicalId) {
           // Use interfaceB (the interface on the 'to' side) if available
           const iface = e.interfaceB || e.label || 'unknown'
           // Use the original neighbor IP stored in the edge
           const neighborIp = e.neighborIpB || e.from
-          conns.push({ interface: iface, neighbor: neighborIp })
+          
+          // Find the local IP for this exact interface (eth0, eth1, usb0, usb1, etc.)
+          const localIpEntry = localIpInfo.find((li: any) => 
+            (li.interface || li.iface) === iface
+          )
+          
+          if (!localIpEntry && localIpInfo.length > 0) {
+            console.log(`[Connection TO] Interface '${iface}' not found for node ${canonicalId}. Available:`, 
+              localIpInfo.map((li: any) => `${li.interface || li.iface || 'NO_INTERFACE'}: ${li.local_ip || li.localIp}`))
+          }
+          
+          const localIp = localIpEntry?.local_ip || localIpEntry?.localIp
+          
+          // Find RTT stats from route_info for this interface/neighbor
+          const routeInfo = currentNode?.route_info || currentNode?.routeInfo || []
+          const routeEntry = routeInfo.find((r: any) => {
+            const incomingIf = r.incoming_interface || r.incomingInterface || ''
+            return incomingIf === iface
+          })
+          
+          conns.push({ 
+            interface: iface, 
+            neighbor: neighborIp,
+            localIp: localIp,
+            rx_packets: routeEntry?.rx_packets,
+            tx_packets: routeEntry?.tx_packets,
+            rtt_ms: routeEntry?.rtt_ms,
+            mdev_rtt_ms: routeEntry?.mdev_rtt_ms
+          })
         }
       }
     }
@@ -97,7 +201,7 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
     // Deduplicate by normalized interface+neighbor, and sort
     // Also filter out self-connections (where neighbor is the same as the node itself)
     const seen = new Set<string>()
-    const dedup: Array<{ interface: string; neighbor: string }> = []
+    const dedup: Array<{ interface: string; neighbor: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
     for (const c of conns) {
       const iface = (c.interface || '').toString().trim()
       const neigh = (c.neighbor || '').toString().trim()
@@ -107,7 +211,14 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       const key = `${iface.toLowerCase()}::${neigh.toLowerCase()}`
       if (!seen.has(key)) {
         seen.add(key)
-        dedup.push({ interface: iface || 'unknown', neighbor: neigh })
+        dedup.push({ 
+          interface: iface || 'unknown', 
+          neighbor: neigh,
+          rx_packets: c.rx_packets,
+          tx_packets: c.tx_packets,
+          rtt_ms: c.rtt_ms,
+          mdev_rtt_ms: c.mdev_rtt_ms
+        })
       }
     }
     dedup.sort((a, b) => a.interface.localeCompare(b.interface) || a.neighbor.localeCompare(b.neighbor))
@@ -126,19 +237,36 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
   }, [rawBackendData, computeConnectedInterfaces])
 
   const handleNodeClick = useCallback((nodeData: any) => {
+    // Clear hover state when clicking
+    setHoveredNode(null);
+    
     if (!nodeData || !rawBackendData) {
       setSelectedNode(null);
+      if (onNodeClick) {
+        onNodeClick(null);
+      }
       return;
     }
 
     // Find backend-equivalent node info using the converted physical data
     const phys = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     const backendNodeInfo = (phys.nodes || []).find((n: any) => n.id === nodeData.id) || null
+    
+    console.log('[handleNodeClick] Node data:', {
+      clickedId: nodeData.id,
+      backendNodeInfo: backendNodeInfo,
+      allLocalIps: backendNodeInfo?.allLocalIps
+    })
 
     const connectedInterfaces = computeConnectedInterfaces(nodeData.id)
     const mergedNode = { ...nodeData, ...(backendNodeInfo || {}), connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
     setSelectedNode(mergedNode);
-  }, [rawBackendData, computeConnectedInterfaces])
+    
+    // Call parent handler to show side panel
+    if (onNodeClick) {
+      onNodeClick(mergedNode);
+    }
+  }, [rawBackendData, computeConnectedInterfaces, onNodeClick])
 
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
     setMousePosition({ x: event.clientX + 10, y: event.clientY + 10 })
@@ -185,14 +313,30 @@ export default function BackendNetworkExample({ darkMode }: BackendNetworkExampl
       setNoPathExists(false)
       return
     }
+    
+    console.log('[computeAndHighlightPath] Finding path:', {
+      selectedSource,
+      selectedTarget,
+      availableNodes: physData.nodes.map((n: any) => n.id)
+    })
+    
     try {
       const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget, rawBackendData)
       const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
       const highlightEdgeStyle = { color: highlightColor, width: 6, dashes: true, shadow: true, animation: true }
       const highlightNodeStyle = { color: { background: highlightColor, border: highlightColor }, borderWidth: 4 }
+      
+      // Dim non-highlighted elements
+      const dimColor = darkMode ? "#444" : "#ccc"
+      const dimEdgeStyle = { color: dimColor, width: 1, opacity: 0.3 }
+      const dimNodeStyle = { color: { background: dimColor, border: dimColor }, opacity: 0.4 }
 
-      const nodes = physData.nodes.map((n: any) => pathNodes.includes(n.id) ? { ...n, ...highlightNodeStyle } : n)
-      const edges = physData.edges.map((e: any) => pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : e)
+      const nodes = physData.nodes.map((n: any) => 
+        pathNodes.includes(n.id) ? { ...n, ...highlightNodeStyle } : { ...n, ...dimNodeStyle }
+      )
+      const edges = physData.edges.map((e: any) => 
+        pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : { ...e, ...dimEdgeStyle }
+      )
       setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges }))
       // If a path with at least source and target exists, mark highlighted
       const hasPath = (pathNodes || []).length > 1

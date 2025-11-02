@@ -15,12 +15,18 @@ export class NetworkDataAdapter {
     if (!nodeIds.has(sourceId)) throw new Error(`Source node '${sourceId}' not found`)
     if (!nodeIds.has(targetId)) throw new Error(`Target node '${targetId}' not found`)
 
-    // If backendJson with route_info is provided, use route-based pathfinding
-    if (backendJson && backendJson.network_map) {
-      return this.findPathUsingRouteInfo(sourceId, targetId, backendJson, edges)
+    // If backendJson with route_info is provided, try route-based pathfinding first
+    // Support both snake_case (network_map) and camelCase (networkMap)
+    if (backendJson && (backendJson.network_map || backendJson.networkMap)) {
+      try {
+        return this.findPathUsingRouteInfo(sourceId, targetId, backendJson, edges)
+      } catch (err) {
+        console.warn('Route-based pathfinding failed, falling back to BFS:', err)
+        // Fall through to BFS
+      }
     }
 
-    // Fallback to BFS-based pathfinding if route_info not available
+    // Fallback to BFS-based pathfinding if route_info not available or failed
     return this.findPathBFS(sourceId, targetId, edges, true)
   }
 
@@ -40,10 +46,23 @@ export class NetworkDataAdapter {
       const str = typeof raw === 'string' ? raw : String(raw)
       const trimmed = str.trim()
       if (!trimmed) return { id: null, fullAddress: null }
+      
+      // Handle "Node00b0197a14cb" format - extract the last hex segment
+      if (trimmed.startsWith('Node') && trimmed.length > 4) {
+        const hexPart = trimmed.substring(4) // Remove "Node" prefix
+        // Extract last 4 characters as the node ID
+        const nodeId = hexPart.substring(hexPart.length - 4)
+        return { id: nodeId, fullAddress: trimmed }
+      }
+      
       // Extract short form: last segment after final ':'
-      const parts = trimmed.split(':')
-      const shortId = parts[parts.length - 1]
-      return { id: shortId, fullAddress: trimmed }
+      if (trimmed.includes(':')) {
+        const parts = trimmed.split(':')
+        const shortId = parts[parts.length - 1]
+        return { id: shortId, fullAddress: trimmed }
+      }
+      
+      return { id: trimmed, fullAddress: null }
     }
 
     // Check if source and target are direct neighbors (single hop)
@@ -62,8 +81,21 @@ export class NetworkDataAdapter {
     const forwardRoutes = new Map<string, Map<string, { nextHop: string, interface: string }>>()
     
     // Build IP-to-NodeID mapping for pathfinding
+    // Support both snake_case and camelCase field names
     const ipToNodeId = new Map<string, string>()
-    for (const entry of backendJson.network_map) {
+    const networkMapData = backendJson?.network_map || backendJson?.networkMap
+    let nodeList: any[] = []
+    
+    if (networkMapData) {
+      // Handle nested structure: { networkMap: { nodeRouteInfo: [...] } }
+      if (networkMapData.nodeRouteInfo || networkMapData.node_route_info) {
+        nodeList = networkMapData.nodeRouteInfo || networkMapData.node_route_info
+      } else if (Array.isArray(networkMapData)) {
+        nodeList = networkMapData
+      }
+    }
+    
+    for (const entry of nodeList) {
       const nodeNameRaw = entry.node_name || entry.nodeName || entry.name
       const { id: canonicalNodeId } = normalizeId(nodeNameRaw)
       if (!canonicalNodeId) continue
@@ -80,7 +112,7 @@ export class NetworkDataAdapter {
       }
     }
     
-    for (const entry of backendJson.network_map) {
+    for (const entry of nodeList) {
       let { id: nodeId } = normalizeId(entry.node_name || entry.nodeName)
       if (!nodeId) continue
       
@@ -304,26 +336,43 @@ export class NetworkDataAdapter {
     // Normalize ids: if the value looks like an IPv6 address, convert to
     // the short hex token used elsewhere (last segment) while returning both
     // the short id and the original full address when present.
+    // Also handle "NodeXXXXXXXX" format by extracting the hex portion.
     const normalizeId = (raw: any) => {
       if (raw === undefined || raw === null) return { id: '', fullAddress: undefined }
       const s = raw.toString().trim()
       if (!s) return { id: '', fullAddress: undefined }
+      
+      // Handle "Node00b0197a14cb" format - extract the last hex segment
+      if (s.startsWith('Node') && s.length > 4) {
+        const hexPart = s.substring(4) // Remove "Node" prefix
+        // Extract last 4 characters as the node ID
+        const nodeId = hexPart.substring(hexPart.length - 4)
+        return { id: nodeId, fullAddress: s }
+      }
+      
       if (s.includes(':')) {
         return { id: this.extractLastHex(s), fullAddress: s }
       }
       return { id: s, fullAddress: undefined }
     }
 
-    // If the payload wraps nodes under `network_map` (new format), extract them;
+    // If the payload wraps nodes under `network_map` or `networkMap` (new format), extract them;
     // otherwise if the payload is an array treat it as entries; otherwise wrap
     // a single node object into an array.
     let nodeEntries: any[] = []
-    if (backendJson && backendJson.network_map) {
-      const nm = backendJson.network_map
+    // Support both snake_case (network_map) and camelCase (networkMap)
+    const networkMapData = backendJson?.network_map || backendJson?.networkMap
+    if (networkMapData) {
+      // Handle nested structure: { networkMap: { nodeRouteInfo: [...] } }
+      let nm = networkMapData
+      if (nm.nodeRouteInfo || nm.node_route_info) {
+        nm = nm.nodeRouteInfo || nm.node_route_info
+      }
+      
       if (Array.isArray(nm)) nodeEntries = nm
       else {
         const vals = Object.values(nm)
-        if (vals.length > 0 && vals.every((v: any) => v && (v.node_name || v.neigh_ip_info || v.route_info || v.neigh_infos))) {
+        if (vals.length > 0 && vals.every((v: any) => v && (v.node_name || v.nodeName || v.neigh_ip_info || v.neighIpInfo || v.route_info || v.routeInfo || v.neigh_infos))) {
           nodeEntries = vals
         } else {
           nodeEntries = [nm]
@@ -350,7 +399,19 @@ export class NetworkDataAdapter {
       
       for (const localIf of localIfs) {
         const localIp = localIf.local_ip || localIf.localIp || localIf.ip
-        const iface = localIf.interface || 'unknown'
+        let iface = localIf.interface || localIf.iface
+        
+        // If no interface specified, try to infer from existing interfaces
+        // Default to eth0 if it's the first unspecified interface
+        if (!iface) {
+          const existingInterfaces = allLocalIps.map(li => li.interface)
+          if (!existingInterfaces.includes('eth0')) {
+            iface = 'eth0'
+          } else {
+            iface = 'unknown'
+          }
+        }
+        
         if (localIp) {
           const { id: ipId } = normalizeId(localIp)
           if (ipId) {
@@ -365,8 +426,38 @@ export class NetworkDataAdapter {
 
     for (const entry of nodeEntries) {
       const targetRaw = entry.node_name || entry.nodeName || entry.name
-      const { id: target, fullAddress: targetFull } = normalizeId(targetRaw)
+      let { id: target, fullAddress: targetFull } = normalizeId(targetRaw)
+      
+      // If normalizeId couldn't extract a canonical ID (non-standard node_name like "fireapp-VirtualBox"),
+      // try to use the eth0 interface IP to determine the canonical node ID
+      if (target && !targetRaw.toString().includes(':') && !targetRaw.toString().startsWith('Node')) {
+        const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
+        const eth0Entry = localIfs.find((li: any) => (li.interface || li.iface) === 'eth0')
+        if (eth0Entry) {
+          const eth0Ip = eth0Entry.local_ip || eth0Entry.localIp || eth0Entry.ip
+          if (eth0Ip) {
+            const { id: canonicalId } = normalizeId(eth0Ip)
+            if (canonicalId) {
+              target = canonicalId
+              targetFull = targetRaw // Keep the original name as fullAddress
+            }
+          }
+        }
+      }
+      
       if (!target) continue
+      
+      // Create a short label for display
+      let displayLabel = targetRaw
+      if (typeof targetRaw === 'string') {
+        if (targetRaw.includes(':')) {
+          // For IPv6, show "Node:XXXX" format
+          displayLabel = `Node:${target}`
+        } else if (targetRaw.startsWith('Node') && targetRaw.length > 4) {
+          // For "NodeXXXX..." format, show last 4 hex digits
+          displayLabel = `Node:${target}`
+        }
+      }
       
       // Attach all local IPs to the node for display in hover
       const localIpsForNode = nodeLocalIps.get(target) || []
@@ -375,6 +466,7 @@ export class NetworkDataAdapter {
       addNode(target, { 
         type: 'target', 
         fullAddress: targetFull,
+        label: displayLabel, // Use short label
         allLocalIps: localIpsForNode 
       })
 
@@ -403,26 +495,49 @@ export class NetworkDataAdapter {
         // Get local IPs for this neighbor node
         const neighborLocalIps = nodeLocalIps.get(neighborId) || []
         
+        // Create a short label for neighbor display
+        let neighborDisplayLabel = rawNeighbor
+        if (typeof rawNeighbor === 'string') {
+          if (rawNeighbor.includes(':')) {
+            neighborDisplayLabel = `Node:${neighborId}`
+          } else if (rawNeighbor.startsWith('Node') && rawNeighbor.length > 4) {
+            neighborDisplayLabel = `Node:${neighborId}`
+          }
+        }
+        
         addNode(neighborId, { 
           type: 'neighbor', 
           interface: n.interface || n.iface || undefined, 
           fullAddress: neighborFull,
+          label: neighborDisplayLabel,
           allLocalIps: neighborLocalIps 
         })
 
-        // canonicalize undirected physical link id so duplicate physical links are not added
-        const [a, b] = [target, neighborId].sort()
-        const eid = `direct-${a}-${b}`
+        // canonicalize undirected physical link id
+        // Use sorted pair of local IP and neighbor IP to uniquely identify each connection
+        // This allows multiple connections between same nodes via different interface pairs
+        const targetInterface = n.interface || n.iface || 'link'
+        
+        // Find the local IP for this interface on the current node
+        const localIpForInterface = localIfs.find((li: any) => (li.interface || li.iface) === targetInterface)
+        const localIpStr = localIpForInterface?.local_ip || localIpForInterface?.localIp
+        const { id: localIpId } = normalizeId(localIpStr || target)
+        const { id: neighIpId } = normalizeId(rawNeighbor)
+        
+        // Create canonical edge ID by sorting the two IP IDs
+        const [ipA, ipB] = [localIpId, neighIpId].sort()
+        const eid = `direct-${ipA}-${ipB}`
+        
         if (!edgeMap.has(eid)) {
-          // Store interface information for both endpoints
-          // When target < neighborId alphabetically, target interface goes first
-          const targetInterface = n.interface || n.iface || 'link'
+          // Determine which nodes are 'from' and 'to' for the edge
+          const [a, b] = [target, neighborId].sort()
+          
           const neighborIpAddress = rawNeighbor // Store the original neighbor IP
           const edgeData: any = { 
             id: eid, 
             from: a, 
             to: b, 
-            label: targetInterface, 
+            label: targetInterface, // Set initial label
             edgeType: 'direct', 
             width: 3, 
             color: '#4ECDC4', 
@@ -442,7 +557,7 @@ export class NetworkDataAdapter {
           // Edge already exists, add the interface for this endpoint
           const existingEdge = edges.find(e => e.id === eid)
           if (existingEdge) {
-            const targetInterface = n.interface || n.iface || 'link'
+            const [a, b] = [target, neighborId].sort()
             const neighborIpAddress = rawNeighbor
             if (target === a) {
               existingEdge.interfaceA = targetInterface
@@ -450,6 +565,12 @@ export class NetworkDataAdapter {
             } else {
               existingEdge.interfaceB = targetInterface
               existingEdge.neighborIpB = neighborIpAddress
+            }
+            // Update label to show both interfaces if both are known
+            if (existingEdge.interfaceA && existingEdge.interfaceB) {
+              existingEdge.label = `${existingEdge.interfaceA} ↔ ${existingEdge.interfaceB}`
+            } else {
+              existingEdge.label = existingEdge.interfaceA || existingEdge.interfaceB || 'link'
             }
           }
         }
@@ -483,11 +604,22 @@ export class NetworkDataAdapter {
         // Get local IPs for this source node
         const sourceLocalIps = nodeLocalIps.get(sourceId) || []
         
+        // Create a short label for source display
+        let sourceDisplayLabel = rawSource
+        if (typeof rawSource === 'string') {
+          if (rawSource.includes(':')) {
+            sourceDisplayLabel = `Node:${sourceId}`
+          } else if (rawSource.startsWith('Node') && rawSource.length > 4) {
+            sourceDisplayLabel = `Node:${sourceId}`
+          }
+        }
+        
         addNode(sourceId, { 
           type: 'source', 
           nextHop: nextHopId || undefined, 
           viaInterface: incomingInterface, 
           fullAddress: sourceFull,
+          label: sourceDisplayLabel,
           allLocalIps: sourceLocalIps 
         })
         // route edges are directional: from source -> target
@@ -519,6 +651,19 @@ export class NetworkDataAdapter {
           }
           edges.push(routeEdge)
           edgeMap.add(routeId)
+        }
+      }
+    }
+
+    // Final pass: ensure all direct edges have proper labels showing interface info
+    for (const edge of edges) {
+      if (edge.edgeType === 'direct') {
+        if (edge.interfaceA && edge.interfaceB) {
+          edge.label = `${edge.interfaceA} ↔ ${edge.interfaceB}`
+        } else if (edge.interfaceA || edge.interfaceB) {
+          edge.label = edge.interfaceA || edge.interfaceB
+        } else if (!edge.label) {
+          edge.label = 'link'
         }
       }
     }
@@ -587,11 +732,24 @@ export class NetworkDataAdapter {
     const traffic = node.traffic || node.utilization || "0%"
     const latency = node.latency || "0ms"
 
-    return `${node.label || node.name || "Node"}
-RX: ${rx}
+    let tooltip = `${node.label || node.name || "Node"}`
+    
+    // Add all local IPs if available
+    if (node.allLocalIps && node.allLocalIps.length > 0) {
+      tooltip += `\n\nLocal IPs:`
+      node.allLocalIps.forEach((ipInfo: any) => {
+        const shortIp = ipInfo.ip ? ipInfo.ip.split(':').pop() : ipInfo.ip
+        const iface = ipInfo.interface || 'eth0' // Default to eth0 if interface not specified
+        tooltip += `\n  ${iface}: ${shortIp}`
+      })
+    }
+    
+    tooltip += `\n\nRX: ${rx}
 TX: ${tx}
 Traffic: ${traffic}
 Latency: ${latency}`
+
+    return tooltip
   }
 
   static inferNodeType(node: any) {

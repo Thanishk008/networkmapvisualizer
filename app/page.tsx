@@ -4,10 +4,12 @@ import { useState, useEffect } from "react"
 import BackendNetworkExample from "@/components/BackendNetworkExample"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import DarkModeToggle from "@/components/DarkModeToggle"
+import NodeDetailsPanel from "@/components/NodeDetailsPanel"
 
 export default function Page() {
   const [showInfo, setShowInfo] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
+  const [selectedNodeDetails, setSelectedNodeDetails] = useState<any>(null)
 
   useEffect(() => {
     if (darkMode) {
@@ -45,10 +47,21 @@ export default function Page() {
         {
           <ErrorBoundary>
             <div style={{ width: "100%", minHeight: "400px" }}>
-              <BackendNetworkExample darkMode={darkMode} />
+              <BackendNetworkExample 
+                darkMode={darkMode} 
+                onNodeClick={(nodeData: any) => setSelectedNodeDetails(nodeData)}
+              />
             </div>
           </ErrorBoundary>
         }
+
+        {selectedNodeDetails && (
+          <NodeDetailsPanel 
+            nodeData={selectedNodeDetails} 
+            onClose={() => setSelectedNodeDetails(null)}
+            darkMode={darkMode}
+          />
+        )}
 
         {showInfo && (
           <div className="info-panel">

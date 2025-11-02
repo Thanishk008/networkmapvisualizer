@@ -1,745 +1,1367 @@
 {
-  "status": "SUCCESS",
-  "network_map": [
-    {
-      "node_name": "fireapp-VirtualBox",
-      "local_ip_info": [
-        {
-          "interface": "usb0",
-          "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "interface": "eth0",
-          "local_ip": "2001:db8::2b0:19ff:fe7a:14cc"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "2001:db8::2b0:19ff:fe7a:14cd"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "usb0",
-          "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "interface": "eth0",
-          "neigh_ip": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:a1b2"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "1576",
-      "local_ip_info": [
-        {
-          "interface": "usb0",
-          "local_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "interface": "usb1",
-          "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:1578"
-        },
-        {
-          "interface": "eth0",
-          "local_ip": "2001:db8::2b0:19ff:fe7a:1577"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "2001:db8::2b0:19ff:fe7a:1579"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "usb0",
-          "neigh_ip": "fireapp-VirtualBox"
-        },
-        {
-          "interface": "usb1",
-          "neigh_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "interface": "eth0",
-          "neigh_ip": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:9876"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "usb1",
-          "iif_neigh_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:f453",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "fe80::2b0:19ff:fe73:f454"
-        },
-        {
-          "interface": "eth2",
-          "local_ip": "fe80::2b0:19ff:fe73:f455"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "fireapp-VirtualBox"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "interface": "eth2",
-          "neigh_ip": "fe80::2b0:19ff:fe73:c3d4"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth2",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:c3d4",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth2",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:c3d4",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd",
-      "local_ip_info": [
-        {
-          "interface": "usb0",
-          "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "interface": "usb1",
-          "local_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14ce"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "usb0",
-          "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "interface": "usb1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:7890"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "usb1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:7890",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "usb1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:7890",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:9876",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "fe80::2b0:19ff:fe73:9877"
-        },
-        {
-          "interface": "usb0",
-          "local_ip": "2001:197a:9876:0:2b0:19ff:fe73:9876"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "interface": "usb0",
-          "neigh_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:7890",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:7890",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:a1b2",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "fe80::2b0:19ff:fe73:a1b3"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "fireapp-VirtualBox"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:e5f6"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fireapp-VirtualBox",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:c3d4",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "fe80::2b0:19ff:fe73:c3d5"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:e5f6"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:f453",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:7890",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "interface": "usb0",
-          "local_ip": "2001:197a:7890:0:2b0:19ff:fe73:7890"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "interface": "usb0",
-          "neigh_ip": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "usb0",
-          "iif_neigh_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:9876",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:e5f6",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "interface": "eth1",
-          "local_ip": "fe80::2b0:19ff:fe73:e5f7"
-        },
-        {
-          "interface": "eth2",
-          "local_ip": "fe80::2b0:19ff:fe73:e5f8"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "interface": "eth1",
-          "neigh_ip": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "interface": "eth2",
-          "neigh_ip": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:c3d4",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth1",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:c3d4",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:a1b2",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        },
-        {
-          "incoming_interface": "eth2",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:abcd",
-          "source_node": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ]
-    },
-    {
-      "node_name": "fe80::2b0:19ff:fe73:abcd",
-      "local_ip_info": [
-        {
-          "interface": "eth0",
-          "local_ip": "fe80::2b0:19ff:fe73:abcd"
-        }
-      ],
-      "neigh_ip_info": [
-        {
-          "interface": "eth0",
-          "neigh_ip": "fe80::2b0:19ff:fe73:e5f6"
-        }
-      ],
-      "route_info": [
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:e5f6"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:a1b2"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fireapp-VirtualBox"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:c3d4"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:f453"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:9876"
-        },
-        {
-          "incoming_interface": "eth0",
-          "iif_neigh_node": "fe80::2b0:19ff:fe73:e5f6",
-          "source_node": "fe80::2b0:19ff:fe73:7890"
-        }
-      ]
-    }
-  ]
+  "status": "COMMAND_INVALID",
+  "networkMap": {
+    "nodeRouteInfo": [
+      {
+        "nodeName": "Node00b01979e101",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1979:e103:0:2b0:19ff:fe79:e103"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe79:e102"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:96de"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96de",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96de",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96de",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96de",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96f9",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01979e8e5",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1979:e8e7:0:2b0:19ff:fe79:e8e7"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe79:e8e6"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:9712"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9712",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9685",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a14f7",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:14f9:0:2b0:19ff:fe7a:14f9"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:14f8"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968e"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9686"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e6"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1514"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9726"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14ff",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a14ff",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:1501:0:2b0:19ff:fe7a:1501"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:14ff"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:1500"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "usb0",
+            "neighIp": "fe80::9b84:7e2e:190b:1d39"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:9726"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14f7",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9686"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9726"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e6"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968e"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1514"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:14f7",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9726",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a1513",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:1515:0:2b0:19ff:fe7a:1515"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:1514"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:968e"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968e"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9725",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9725",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9725",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9686"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e6"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968e",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9725",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a9685",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:9687:0:2b0:19ff:fe7a:9687"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:9686"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe79:e8e6"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968d",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968d",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968d",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968d",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968d",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e6"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e6",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:968d",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a968d",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:968f:0:2b0:19ff:fe7a:968f"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:968e"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:9686"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:1513"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9686"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1513",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1513",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1513",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1513",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e6"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9686",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1513",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a96ad",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:96af:0:2b0:19ff:fe7a:96af"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:96ad"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:96ae"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:96dd"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96dd",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a96dd",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:96df:0:2b0:19ff:fe7a:96df"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:96de"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "fe80::741a:666f:3a20:5c8e"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe79:e101"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96ae",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96ae",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e101",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a96f9",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:96fb:0:2b0:19ff:fe7a:96fb"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:96fa"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:9711"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e102",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e102",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e102",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e102",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:9711",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e102",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a9711",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:9713:0:2b0:19ff:fe7a:9713"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:9712"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:96fa"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:96fa",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe79:e8e5",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b0197a9725",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:197a:9727:0:2b0:19ff:fe7a:9727"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe7a:9726"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe7a:1514"
+          }
+        ],
+        "routeInfo": [
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9725"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968e"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1500",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1500"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1500",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14f7"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96ae"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e102"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96de"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96fa"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9686"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e6"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1514"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9712"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9711"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e101"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96dd"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:96f9"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:9685"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:968d"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe79:e8e5"
+          },
+          {
+            "incomingInterface": "eth0",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1514",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:1513"
+          },
+          {
+            "incomingInterface": "eth1",
+            "iifNeighNode": "2001:db8::2b0:19ff:fe7a:1500",
+            "sourceNode": "2001:db8::2b0:19ff:fe7a:14ff"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -128,21 +128,6 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
         </div>
       )}
 
-
-      {stats.rx !== undefined && (
-        <div style={statRowStyle}>
-          <span style={labelStyle}>RX:</span>
-          <span style={valueStyle}>{stats.rx}</span>
-        </div>
-      )}
-
-      {stats.tx !== undefined && (
-        <div style={statRowStyle}>
-          <span style={labelStyle}>TX:</span>
-          <span style={valueStyle}>{stats.tx}</span>
-        </div>
-      )}
-
       {stats.fullNextHopAddress && (
         <div style={{ ...statRowStyle, marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #eee" }}>
           <span style={labelStyle}>Full Address:</span>
@@ -151,14 +136,45 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
       )}
 
       {Array.isArray(stats.connectedInterfaces) && stats.connectedInterfaces.length > 0 ? (
-        <div style={{ ...statRowStyle, marginTop: '10px', alignItems: 'flex-start' }}>
-          <span style={labelStyle}>Connections:</span>
-          <div style={{ margin: '5px 0 0 15px', color: valueColor, fontFamily: 'monospace' }}>
+        <div style={{ ...statRowStyle, marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${borderColor}`, flexDirection: 'column' }}>
+          <span style={{ ...labelStyle, marginBottom: '8px' }}>Connections:</span>
+          <div style={{ marginLeft: '10px', fontSize: '11px' }}>
             {stats.connectedInterfaces
               .filter((conn: any) => conn && conn.neighbor)
               .map((conn: any, index: number) => (
-                <div key={index} style={{ marginBottom: '4px' }}>
-                  {conn.interface}: {conn.neighbor}
+                <div key={index} style={{ marginBottom: '10px', paddingBottom: '8px', borderBottom: index < stats.connectedInterfaces.length - 1 ? `1px solid ${borderColor}` : 'none' }}>
+                  <div style={{ marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: labelColor, fontWeight: 'bold' }}>{conn.interface}:</span>
+                    <span style={{ color: valueColor, fontFamily: 'monospace', fontSize: '10px' }}>{conn.neighbor}</span>
+                  </div>
+                  {(conn.rx_packets !== undefined || conn.tx_packets !== undefined || conn.rtt_ms !== undefined) && (
+                    <div style={{ marginLeft: '10px', fontSize: '10px', marginTop: '4px' }}>
+                      {conn.rx_packets !== undefined && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <span style={{ color: labelColor }}>RX Packets:</span>
+                          <span style={{ color: valueColor }}>{conn.rx_packets}</span>
+                        </div>
+                      )}
+                      {conn.tx_packets !== undefined && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <span style={{ color: labelColor }}>TX Packets:</span>
+                          <span style={{ color: valueColor }}>{conn.tx_packets}</span>
+                        </div>
+                      )}
+                      {conn.rtt_ms !== undefined && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <span style={{ color: labelColor }}>RTT:</span>
+                          <span style={{ color: valueColor }}>{conn.rtt_ms} ms</span>
+                        </div>
+                      )}
+                      {conn.mdev_rtt_ms !== undefined && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <span style={{ color: labelColor }}>Jitter:</span>
+                          <span style={{ color: valueColor }}>{conn.mdev_rtt_ms} ms</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
           </div>
