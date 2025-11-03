@@ -72,14 +72,24 @@ export class NetworkDataAdapter {
       const localIfs = nodeInfo.local_ip_info || nodeInfo.local_ip_infos || [];
       if (Array.isArray(localIfs) && localIfs.length > 0) {
         const existingTarget = nodes.find(n => n.id === targetNodeId);
-        if (existingTarget) existingTarget.localInterfaces = localIfs.map(li => ({ interface: li.interface || li.iface, ip: li.local_ip || li.ip || li.address }));
+        if (existingTarget) {
+          const interfaceList = localIfs.map(li => ({ interface: li.interface || li.iface, ip: li.local_ip || li.ip || li.address }));
+          // Sort by interface order: eth0, eth1, usb0, usb1
+          const interfaceOrder = { 'eth0': 0, 'eth1': 1, 'usb0': 2, 'usb1': 3 };
+          interfaceList.sort((a, b) => {
+            const orderA = interfaceOrder[a.interface] ?? 999;
+            const orderB = interfaceOrder[b.interface] ?? 999;
+            return orderA - orderB;
+          });
+          existingTarget.localInterfaces = interfaceList;
+        }
       }
 
       const neighInfos = nodeInfo.neigh_ip_info || nodeInfo.neigh_infos || nodeInfo.neigh_list || [];
       neighInfos.forEach(neighInfo => {
         const rawNeighbor = neighInfo.neigh_node || neighInfo.neigh || neighInfo.neigh_ip || neighInfo.id;
         const neighborId = normalizeId(rawNeighbor);
-        const interfaceType = neighInfo.interface || neighInfo.iface || 'link';
+        const interfaceType = neighInfo.interface || neighInfo.iface || 'eth0';
         if (!neighborId) return;
         if (!nodeMap.has(neighborId)) {
           nodes.push({ id: neighborId, label: `Node ${neighborId}`, type: 'neighbor', interface: interfaceType });
@@ -121,7 +131,7 @@ export class NetworkDataAdapter {
             if (existingEdge.interfaceA && existingEdge.interfaceB) {
               existingEdge.label = `${existingEdge.interfaceA} ↔ ${existingEdge.interfaceB}`;
             } else {
-              existingEdge.label = existingEdge.interfaceA || existingEdge.interfaceB || 'link';
+              existingEdge.label = existingEdge.interfaceA || existingEdge.interfaceB || 'eth0';
             }
           }
         }

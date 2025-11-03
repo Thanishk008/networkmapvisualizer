@@ -421,6 +421,14 @@ export class NetworkDataAdapter {
         }
       }
       
+      // Sort local IPs by interface order: eth0, eth1, usb0, usb1
+      const interfaceOrder: {[key: string]: number} = { 'eth0': 0, 'eth1': 1, 'usb0': 2, 'usb1': 3 }
+      allLocalIps.sort((a, b) => {
+        const orderA = interfaceOrder[a.interface] ?? 999
+        const orderB = interfaceOrder[b.interface] ?? 999
+        return orderA - orderB
+      })
+      
       nodeLocalIps.set(nodeId, allLocalIps)
     }
 
@@ -451,11 +459,11 @@ export class NetworkDataAdapter {
       let displayLabel = targetRaw
       if (typeof targetRaw === 'string') {
         if (targetRaw.includes(':')) {
-          // For IPv6, show "Node:XXXX" format
-          displayLabel = `Node:${target}`
+          // For IPv6, show "Node XXXX" format
+          displayLabel = `Node ${target}`
         } else if (targetRaw.startsWith('Node') && targetRaw.length > 4) {
           // For "NodeXXXX..." format, show last 4 hex digits
-          displayLabel = `Node:${target}`
+          displayLabel = `Node ${target}`
         }
       }
       
@@ -499,9 +507,9 @@ export class NetworkDataAdapter {
         let neighborDisplayLabel = rawNeighbor
         if (typeof rawNeighbor === 'string') {
           if (rawNeighbor.includes(':')) {
-            neighborDisplayLabel = `Node:${neighborId}`
+            neighborDisplayLabel = `Node ${neighborId}`
           } else if (rawNeighbor.startsWith('Node') && rawNeighbor.length > 4) {
-            neighborDisplayLabel = `Node:${neighborId}`
+            neighborDisplayLabel = `Node ${neighborId}`
           }
         }
         
@@ -516,7 +524,7 @@ export class NetworkDataAdapter {
         // canonicalize undirected physical link id
         // Use sorted pair of local IP and neighbor IP to uniquely identify each connection
         // This allows multiple connections between same nodes via different interface pairs
-        const targetInterface = n.interface || n.iface || 'link'
+        const targetInterface = n.interface || n.iface || 'eth0'
         
         // Find the local IP for this interface on the current node
         const localIpForInterface = localIfs.find((li: any) => (li.interface || li.iface) === targetInterface)
@@ -570,7 +578,7 @@ export class NetworkDataAdapter {
             if (existingEdge.interfaceA && existingEdge.interfaceB) {
               existingEdge.label = `${existingEdge.interfaceA} ↔ ${existingEdge.interfaceB}`
             } else {
-              existingEdge.label = existingEdge.interfaceA || existingEdge.interfaceB || 'link'
+              existingEdge.label = existingEdge.interfaceA || existingEdge.interfaceB || 'eth0'
             }
           }
         }
@@ -608,9 +616,9 @@ export class NetworkDataAdapter {
         let sourceDisplayLabel = rawSource
         if (typeof rawSource === 'string') {
           if (rawSource.includes(':')) {
-            sourceDisplayLabel = `Node:${sourceId}`
+            sourceDisplayLabel = `Node ${sourceId}`
           } else if (rawSource.startsWith('Node') && rawSource.length > 4) {
-            sourceDisplayLabel = `Node:${sourceId}`
+            sourceDisplayLabel = `Node ${sourceId}`
           }
         }
         
@@ -663,7 +671,7 @@ export class NetworkDataAdapter {
         } else if (edge.interfaceA || edge.interfaceB) {
           edge.label = edge.interfaceA || edge.interfaceB
         } else if (!edge.label) {
-          edge.label = 'link'
+          edge.label = 'eth0'
         }
       }
     }
