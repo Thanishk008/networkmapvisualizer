@@ -69,13 +69,19 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
   // Helper: compute connected interfaces for a given node by scanning physical nodes/edges
   const computeConnectedInterfaces = useCallback((nodeId: string) => {
     if (!nodeId || !rawBackendData) return []
-    // canonicalize nodeId: if it looks like an IPv6, extract short id
-    const canonicalId = (nodeId && nodeId.toString().includes(':')) ? NetworkDataAdapter.extractLastHex(nodeId) : nodeId
+    // canonicalize nodeId: if it looks like an IPv6, extract short id and remove leading zeros
+    let canonicalId = (nodeId && nodeId.toString().includes(':')) ? NetworkDataAdapter.extractLastHex(nodeId) : nodeId
+    // Remove leading zeros from canonical ID
+    if (canonicalId && /^[0-9a-fA-F]+$/.test(canonicalId)) {
+      canonicalId = parseInt(canonicalId, 16).toString(16)
+    }
+    
     const phys = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     const edges = phys.edges || []
     const conns: Array<{ interface: string; neighbor: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
 
-    // Find the current node in backend data to get route_info statistics and local IPs
+    // Build a map of all IP addresses to their base node IDs
+    const ipToBaseNodeId = new Map<string, string>()
     const networkMapData = rawBackendData?.network_map || rawBackendData?.networkMap
     let networkMap: any[] = []
     if (networkMapData) {
@@ -87,15 +93,41 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
       }
     }
     
+    // Map all IPs to their base node ID
+    networkMap.forEach((n: any) => {
+      const nodeName = n.node_name || n.nodeName
+      if (!nodeName) return
+      
+      // Extract base node ID from node name
+      let baseNodeId = nodeName
+      if (nodeName.toString().startsWith('Node') && nodeName.length > 4) {
+        const hexPart = nodeName.substring(4)
+        const nodeIdWithZeros = hexPart.substring(hexPart.length - 4)
+        // Remove leading zeros
+        baseNodeId = parseInt(nodeIdWithZeros, 16).toString(16)
+      }
+      
+      // Map all local IPs to this base node ID
+      const localIps = n.local_ip_info || n.localIpInfo || []
+      localIps.forEach((lip: any) => {
+        const ip = lip.local_ip || lip.localIp
+        if (ip) {
+          const ipId = NetworkDataAdapter.extractLastHex(ip)
+          ipToBaseNodeId.set(ipId, baseNodeId)
+        }
+      })
+    })
+    
     const currentNode = networkMap.find((n: any) => {
       const nodeName = n.node_name || n.nodeName
       if (!nodeName) return false
       
-      // Extract short ID from node name
+      // Extract short ID from node name and remove leading zeros
       let nodeShortId = nodeName
       if (nodeName.toString().startsWith('Node') && nodeName.length > 4) {
         const hexPart = nodeName.substring(4)
-        nodeShortId = hexPart.substring(hexPart.length - 4)
+        const idWithZeros = hexPart.substring(hexPart.length - 4)
+        nodeShortId = parseInt(idWithZeros, 16).toString(16)
       } else if (nodeName.toString().includes(':')) {
         nodeShortId = NetworkDataAdapter.extractLastHex(nodeName)
       }
@@ -104,6 +136,10 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
       let searchShortId = nodeId
       if (nodeId && nodeId.toString().includes(':')) {
         searchShortId = NetworkDataAdapter.extractLastHex(nodeId)
+        // Remove leading zeros
+        if (/^[0-9a-fA-F]+$/.test(searchShortId)) {
+          searchShortId = parseInt(searchShortId, 16).toString(16)
+        }
       }
       
       // Match using both canonical and short IDs
@@ -123,6 +159,9 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
       localIpInfo: localIpInfo
     })
 
+    // Track which neighbor nodes we've already added to avoid duplicates
+    const seenNeighbors = new Set<string>()
+
     for (const e of edges) {
       // Only include physical (direct) connections
       if (e.edgeType === 'direct') {
@@ -131,6 +170,23 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
           const iface = e.interfaceA || e.label || 'unknown'
           // Use the original neighbor IP stored in the edge
           const neighborIp = e.neighborIpA || e.to
+          
+          // Get base node ID for this neighbor
+          const neighborIpId = NetworkDataAdapter.extractLastHex(neighborIp)
+          let baseNeighborId = ipToBaseNodeId.get(neighborIpId)
+          
+          // If not in map, extract and normalize the ID
+          if (!baseNeighborId) {
+            baseNeighborId = neighborIpId
+            // Remove leading zeros
+            if (baseNeighborId && /^[0-9a-fA-F]+$/.test(baseNeighborId)) {
+              baseNeighborId = parseInt(baseNeighborId, 16).toString(16)
+            }
+          }
+          
+          // Skip if we've already added this neighbor base node
+          if (seenNeighbors.has(baseNeighborId)) continue
+          seenNeighbors.add(baseNeighborId)
           
           // Find the local IP for this exact interface (eth0, eth1, usb0, usb1, etc.)
           const localIpEntry = localIpInfo.find((li: any) => 
@@ -153,7 +209,7 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
           
           conns.push({ 
             interface: iface, 
-            neighbor: neighborIp,
+            neighbor: baseNeighborId,  // Use base node ID instead of interface IP
             localIp: localIp,
             rx_packets: routeEntry?.rx_packets,
             tx_packets: routeEntry?.tx_packets,
@@ -165,6 +221,23 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
           const iface = e.interfaceB || e.label || 'unknown'
           // Use the original neighbor IP stored in the edge
           const neighborIp = e.neighborIpB || e.from
+          
+          // Get base node ID for this neighbor
+          const neighborIpId = NetworkDataAdapter.extractLastHex(neighborIp)
+          let baseNeighborId = ipToBaseNodeId.get(neighborIpId)
+          
+          // If not in map, extract and normalize the ID
+          if (!baseNeighborId) {
+            baseNeighborId = neighborIpId
+            // Remove leading zeros
+            if (baseNeighborId && /^[0-9a-fA-F]+$/.test(baseNeighborId)) {
+              baseNeighborId = parseInt(baseNeighborId, 16).toString(16)
+            }
+          }
+          
+          // Skip if we've already added this neighbor base node
+          if (seenNeighbors.has(baseNeighborId)) continue
+          seenNeighbors.add(baseNeighborId)
           
           // Find the local IP for this exact interface (eth0, eth1, usb0, usb1, etc.)
           const localIpEntry = localIpInfo.find((li: any) => 

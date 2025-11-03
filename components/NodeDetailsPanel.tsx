@@ -252,7 +252,22 @@ export default function NodeDetailsPanel({ nodeData, onClose, darkMode = false }
                       fontSize: '10px',
                       fontStyle: conn.localIp ? 'normal' : 'italic',
                     }}>
-                      {conn.localIp ? conn.localIp.split(':').pop() : 'N/A'}
+                      {(() => {
+                        // First try the localIp from connection
+                        if (conn.localIp) {
+                          return conn.localIp;
+                        }
+                        // If not available, look it up from allLocalIps by matching interface
+                        if (nodeData.allLocalIps && Array.isArray(nodeData.allLocalIps)) {
+                          const matchingIp = nodeData.allLocalIps.find((ipInfo: any) => 
+                            ipInfo.interface === conn.interface
+                          );
+                          if (matchingIp && matchingIp.ip) {
+                            return matchingIp.ip;
+                          }
+                        }
+                        return 'N/A';
+                      })()}
                     </span>
                   </div>
 

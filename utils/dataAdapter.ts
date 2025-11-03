@@ -345,8 +345,10 @@ export class NetworkDataAdapter {
       // Handle "Node00b0197a14cb" format - extract the last hex segment
       if (s.startsWith('Node') && s.length > 4) {
         const hexPart = s.substring(4) // Remove "Node" prefix
-        // Extract last 4 characters as the node ID
-        const nodeId = hexPart.substring(hexPart.length - 4)
+        // Extract last 4 characters as the node ID and remove leading zeros
+        const nodeIdWithZeros = hexPart.substring(hexPart.length - 4)
+        // Convert to number and back to hex to remove leading zeros
+        const nodeId = parseInt(nodeIdWithZeros, 16).toString(16)
         return { id: nodeId, fullAddress: s }
       }
       
