@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import NetworkMap from "./NetworkMap"
 import StatisticsDisplay from "./StatisticsDisplay"
+import SearchableSelect from "./SearchableSelect"
 import { NetworkDataAdapter } from "@/utils/dataAdapter"
 
 interface BackendNetworkExampleProps {
@@ -78,10 +79,19 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
     
     const phys = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
     const edges = phys.edges || []
-    const conns: Array<{ interface: string; neighbor: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
+    const nodes = phys.nodes || []
+    const conns: Array<{ interface: string; neighbor: string; neighborFullIp?: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
 
     // Build a map of all IP addresses to their base node IDs
     const ipToBaseNodeId = new Map<string, string>()
+    
+    // Build a map of node IDs to their fullAddress
+    const nodeIdToFullAddress = new Map<string, string>()
+    for (const node of nodes) {
+      if (node.id && node.fullAddress) {
+        nodeIdToFullAddress.set(node.id, node.fullAddress)
+      }
+    }
     const networkMapData = rawBackendData?.network_map || rawBackendData?.networkMap
     let networkMap: any[] = []
     if (networkMapData) {
@@ -159,8 +169,9 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
       localIpInfo: localIpInfo
     })
 
-    // Track which neighbor nodes we've already added to avoid duplicates
-    const seenNeighbors = new Set<string>()
+    // Track which connections we've already added to avoid duplicates
+    // Key: "localInterface-neighborIP" to allow multiple connections to different IPs of same node
+    const seenConnections = new Set<string>()
 
     for (const e of edges) {
       // Only include physical (direct) connections
@@ -184,14 +195,24 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
             }
           }
           
-          // Skip if we've already added this neighbor base node
-          if (seenNeighbors.has(baseNeighborId)) continue
-          seenNeighbors.add(baseNeighborId)
+          // Get the full address for this neighbor node
+          const neighborFullAddress = nodeIdToFullAddress.get(baseNeighborId) || neighborIp
+          
+          // Create unique key based on local interface and neighbor IP (not base node)
+          const connectionKey = `${iface}-${neighborIpId}`
+          
+          // Skip if we've already added this exact connection
+          if (seenConnections.has(connectionKey)) continue
+          seenConnections.add(connectionKey)
           
           // Find the local IP for this exact interface (eth0, eth1, usb0, usb1, etc.)
-          const localIpEntry = localIpInfo.find((li: any) => 
-            (li.interface || li.iface) === iface
-          )
+          const localIpEntry = localIpInfo.find((li: any) => {
+            const liInterface = li.interface || li.iface
+            // Treat 'NO_INTERFACE' as 'eth0' and also match undefined/null as 'eth0'
+            const normalizedLiInterface = (!liInterface || liInterface === 'NO_INTERFACE') ? 'eth0' : liInterface
+            const normalizedIface = (!iface || iface === 'NO_INTERFACE') ? 'eth0' : iface
+            return normalizedLiInterface === normalizedIface
+          })
           
           if (!localIpEntry && localIpInfo.length > 0) {
             console.log(`[Connection FROM] Interface '${iface}' not found for node ${canonicalId}. Available:`, 
@@ -210,6 +231,7 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
           conns.push({ 
             interface: iface, 
             neighbor: baseNeighborId,  // Use base node ID instead of interface IP
+            neighborFullIp: neighborFullAddress,  // Store full neighbor IP address (eth0)
             localIp: localIp,
             rx_packets: routeEntry?.rx_packets,
             tx_packets: routeEntry?.tx_packets,
@@ -235,14 +257,24 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
             }
           }
           
-          // Skip if we've already added this neighbor base node
-          if (seenNeighbors.has(baseNeighborId)) continue
-          seenNeighbors.add(baseNeighborId)
+          // Get the full address for this neighbor node
+          const neighborFullAddress = nodeIdToFullAddress.get(baseNeighborId) || neighborIp
+          
+          // Create unique key based on local interface and neighbor IP (not base node)
+          const connectionKey = `${iface}-${neighborIpId}`
+          
+          // Skip if we've already added this exact connection
+          if (seenConnections.has(connectionKey)) continue
+          seenConnections.add(connectionKey)
           
           // Find the local IP for this exact interface (eth0, eth1, usb0, usb1, etc.)
-          const localIpEntry = localIpInfo.find((li: any) => 
-            (li.interface || li.iface) === iface
-          )
+          // Normalize interface names: treat 'NO_INTERFACE', undefined, null as 'eth0'
+          const localIpEntry = localIpInfo.find((li: any) => {
+            const liInterface = li.interface || li.iface
+            const normalizedLiInterface = (!liInterface || liInterface === 'NO_INTERFACE') ? 'eth0' : liInterface
+            const normalizedIface = (!iface || iface === 'NO_INTERFACE') ? 'eth0' : iface
+            return normalizedLiInterface === normalizedIface
+          })
           
           if (!localIpEntry && localIpInfo.length > 0) {
             console.log(`[Connection TO] Interface '${iface}' not found for node ${canonicalId}. Available:`, 
@@ -260,7 +292,8 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
           
           conns.push({ 
             interface: iface, 
-            neighbor: neighborIp,
+            neighbor: baseNeighborId,  // Use base node ID for consistency
+            neighborFullIp: neighborFullAddress,  // Store full neighbor IP address (eth0)
             localIp: localIp,
             rx_packets: routeEntry?.rx_packets,
             tx_packets: routeEntry?.tx_packets,
@@ -274,7 +307,7 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
     // Deduplicate by normalized interface+neighbor, and sort
     // Also filter out self-connections (where neighbor is the same as the node itself)
     const seen = new Set<string>()
-    const dedup: Array<{ interface: string; neighbor: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
+    const dedup: Array<{ interface: string; neighbor: string; neighborFullIp?: string; localIp?: string; rx_packets?: string; tx_packets?: string; rtt_ms?: number; mdev_rtt_ms?: number }> = []
     for (const c of conns) {
       const iface = (c.interface || '').toString().trim()
       const neigh = (c.neighbor || '').toString().trim()
@@ -305,7 +338,12 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
     }
 
     const connectedInterfaces = computeConnectedInterfaces(nodeData.id)
-    const enrichedNodeData = { ...nodeData, connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
+    // Preserve fullAddress from original nodeData
+    const enrichedNodeData = { 
+      ...nodeData, 
+      fullAddress: nodeData.fullAddress, // Explicitly preserve
+      connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined 
+    };
     setHoveredNode(enrichedNodeData);
   }, [rawBackendData, computeConnectedInterfaces])
 
@@ -332,7 +370,13 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
     })
 
     const connectedInterfaces = computeConnectedInterfaces(nodeData.id)
-    const mergedNode = { ...nodeData, ...(backendNodeInfo || {}), connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined };
+    // Preserve fullAddress from nodeData (set by main adapter) - don't let backendNodeInfo overwrite it
+    const mergedNode = { 
+      ...nodeData, 
+      ...(backendNodeInfo || {}), 
+      fullAddress: nodeData.fullAddress, // Explicitly preserve the correct fullAddress
+      connectedInterfaces: connectedInterfaces.length > 0 ? connectedInterfaces : undefined 
+    };
     setSelectedNode(mergedNode);
     
     // Call parent handler to show side panel
@@ -486,20 +530,26 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 auto', justifyContent: 'center' }}>
           <div className="source-selector" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <label htmlFor="source-select" className="source-label" style={{ fontWeight: 600 }}>Source</label>
-            <select id="source-select" value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="source-select" style={{ padding: '8px', borderRadius: 6 }}>
-              <option value="">-- Select Source Node --</option>
-              {sourceNodes.map((node: any) => (
-                <option key={node.id} value={node.id}>{node.label}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              id="source-select"
+              value={selectedSource}
+              onChange={setSelectedSource}
+              options={sourceNodes}
+              placeholder="-- Select Source Node --"
+              disabled={loading}
+              darkMode={darkMode}
+            />
 
             <label htmlFor="target-select" className="source-label" style={{ fontWeight: 600 }}>Target</label>
-            <select id="target-select" value={selectedTarget} onChange={(e) => setSelectedTarget(e.target.value)} className="source-select" style={{ padding: '8px', borderRadius: 6 }}>
-              <option value="">-- Select Target Node --</option>
-              {allNodes.map((node: any) => (
-                <option key={node.id} value={node.id}>{node.label}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              id="target-select"
+              value={selectedTarget}
+              onChange={setSelectedTarget}
+              options={allNodes}
+              placeholder="-- Select Target Node --"
+              disabled={loading}
+              darkMode={darkMode}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

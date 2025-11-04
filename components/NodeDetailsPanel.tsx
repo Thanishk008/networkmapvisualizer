@@ -231,8 +231,8 @@ export default function NodeDetailsPanel({ nodeData, onClose, darkMode = false }
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
-                    }}>
-                      {conn.neighbor}
+                    }} title={conn.neighborFullIp || conn.neighbor}>
+                      {conn.neighborFullIp || conn.neighbor}
                     </span>
                   </div>
 

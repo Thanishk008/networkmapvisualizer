@@ -316,8 +316,14 @@ export class NetworkDataAdapter {
         // If node exists, update it with new properties
         const existing = nodes.find((n) => n.id === id)
         if (existing) {
-          if (opts && opts.fullAddress && !existing.fullAddress) {
-            existing.fullAddress = opts.fullAddress
+          // Only update fullAddress if:
+          // 1. No fullAddress exists yet, OR
+          // 2. The new data is from a target node (type='target') which has authoritative eth0 IP
+          // Don't let neighbor references overwrite the correct eth0 IP from target entries
+          if (opts && opts.fullAddress) {
+            if (!existing.fullAddress || opts.type === 'target') {
+              existing.fullAddress = opts.fullAddress
+            }
           }
           if (opts && opts.allLocalIps && !existing.allLocalIps) {
             existing.allLocalIps = opts.allLocalIps
@@ -438,21 +444,54 @@ export class NetworkDataAdapter {
       const targetRaw = entry.node_name || entry.nodeName || entry.name
       let { id: target, fullAddress: targetFull } = normalizeId(targetRaw)
       
+      // Get the eth0 IP address to use as the full address for display
+      const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
+      
+      // Priority order: eth0 (or undefined) → eth1 → usb0 → usb1
+      let eth0IpAddress = null
+      
+      // First try to find eth0 or undefined interface
+      const eth0Entry = localIfs.find((li: any) => {
+        const iface = li.interface || li.iface
+        return !iface || iface === 'eth0' || iface === 'NO_INTERFACE'
+      })
+      
+      if (eth0Entry) {
+        eth0IpAddress = eth0Entry.local_ip || eth0Entry.localIp || eth0Entry.ip
+      } else {
+        // If no eth0, try eth1 → usb0 → usb1 in priority order
+        const priorityOrder = ['eth1', 'usb0', 'usb1']
+        for (const ifaceName of priorityOrder) {
+          const entry = localIfs.find((li: any) => {
+            const iface = li.interface || li.iface
+            return iface === ifaceName
+          })
+          if (entry) {
+            eth0IpAddress = entry.local_ip || entry.localIp || entry.ip
+            break
+          }
+        }
+        
+        // If still not found, use the first available as last resort
+        if (!eth0IpAddress && localIfs.length > 0) {
+          const firstEntry = localIfs[0]
+          eth0IpAddress = firstEntry.local_ip || firstEntry.localIp || firstEntry.ip
+        }
+      }
+      
       // If normalizeId couldn't extract a canonical ID (non-standard node_name like "fireapp-VirtualBox"),
       // try to use the eth0 interface IP to determine the canonical node ID
       if (target && !targetRaw.toString().includes(':') && !targetRaw.toString().startsWith('Node')) {
-        const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
-        const eth0Entry = localIfs.find((li: any) => (li.interface || li.iface) === 'eth0')
-        if (eth0Entry) {
-          const eth0Ip = eth0Entry.local_ip || eth0Entry.localIp || eth0Entry.ip
-          if (eth0Ip) {
-            const { id: canonicalId } = normalizeId(eth0Ip)
-            if (canonicalId) {
-              target = canonicalId
-              targetFull = targetRaw // Keep the original name as fullAddress
-            }
+        if (eth0IpAddress) {
+          const { id: canonicalId } = normalizeId(eth0IpAddress)
+          if (canonicalId) {
+            target = canonicalId
+            targetFull = eth0IpAddress // Use eth0 IP as fullAddress
           }
         }
+      } else if (eth0IpAddress) {
+        // For standard node names, also use eth0 IP as fullAddress
+        targetFull = eth0IpAddress
       }
       
       if (!target) continue
@@ -482,7 +521,6 @@ export class NetworkDataAdapter {
 
       // Neighbors come from neigh_ip_info (IP-based) or neigh_list
       // Preserve local interface info for the target node (do not create new nodes).
-      const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
       if (Array.isArray(localIfs) && localIfs.length > 0) {
         // attach localInterfaces metadata to the target node if available
         const existingTarget = nodes.find((n) => n.id === target)

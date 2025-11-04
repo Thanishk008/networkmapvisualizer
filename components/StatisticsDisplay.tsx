@@ -90,7 +90,7 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
 
           <div style={statRowStyle}>
             <span style={labelStyle}>Node ID:</span>
-            <span style={valueStyle}>{nodeData.fullAddress || stats.id}</span>
+            <span style={{ ...valueStyle, fontSize: '10px', wordBreak: 'break-all', fontFamily: 'monospace' }}>{nodeData.fullAddress}</span>
           </div>
 
       {nodeData.allLocalIps && nodeData.allLocalIps.length > 0 && (
@@ -145,7 +145,9 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
                 <div key={index} style={{ marginBottom: '10px', paddingBottom: '8px', borderBottom: index < stats.connectedInterfaces.length - 1 ? `1px solid ${borderColor}` : 'none' }}>
                   <div style={{ marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: labelColor, fontWeight: 'bold' }}>{conn.interface}:</span>
-                    <span style={{ color: valueColor, fontFamily: 'monospace', fontSize: '10px' }}>{conn.neighbor}</span>
+                    <span style={{ color: valueColor, fontFamily: 'monospace', fontSize: '10px' }} title={conn.neighborFullIp || conn.neighbor}>
+                      {conn.neighborFullIp || conn.neighbor}
+                    </span>
                   </div>
                   {(conn.rx_packets !== undefined || conn.tx_packets !== undefined || conn.rtt_ms !== undefined) && (
                     <div style={{ marginLeft: '10px', fontSize: '10px', marginTop: '4px' }}>

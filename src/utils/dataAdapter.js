@@ -61,17 +61,60 @@ export class NetworkDataAdapter {
       const targetRaw = nodeInfo.node_name || nodeInfo.nodeName || nodeInfo.name;
       const targetNodeId = normalizeId(targetRaw);
       if (!targetNodeId) return;
+      
+      // Get the eth0 IP address to use as the full address for display
+      const localIfs = nodeInfo.local_ip_info || nodeInfo.localIpInfo || nodeInfo.local_ip_infos || [];
+      
+      // Priority order: eth0 (or undefined) → eth1 → usb0 → usb1
+      let eth0IpAddress = null;
+      
+      // First try to find eth0 or undefined interface
+      const eth0Entry = localIfs.find(li => {
+        const iface = li.interface || li.iface;
+        return !iface || iface === 'eth0' || iface === 'NO_INTERFACE';
+      });
+      
+      if (eth0Entry) {
+        eth0IpAddress = eth0Entry.local_ip || eth0Entry.localIp || eth0Entry.ip;
+      } else {
+        // If no eth0, try eth1 → usb0 → usb1 in priority order
+        const priorityOrder = ['eth1', 'usb0', 'usb1'];
+        for (const ifaceName of priorityOrder) {
+          const entry = localIfs.find(li => {
+            const iface = li.interface || li.iface;
+            return iface === ifaceName;
+          });
+          if (entry) {
+            eth0IpAddress = entry.local_ip || entry.localIp || entry.ip;
+            break;
+          }
+        }
+        
+        // If still not found, use the first available as last resort
+        if (!eth0IpAddress && localIfs.length > 0) {
+          const firstEntry = localIfs[0];
+          eth0IpAddress = firstEntry.local_ip || firstEntry.localIp || firstEntry.ip;
+        }
+      }
+      
       if (!nodeMap.has(targetNodeId)) {
         nodes.push({
           id: targetNodeId,
           label: `Node ${targetNodeId}`,
           type: 'target',
+          fullAddress: eth0IpAddress,
         });
         nodeMap.set(targetNodeId, true);
+      } else {
+        // Node already exists (probably added as neighbor) - update fullAddress with eth0 IP
+        const existing = nodes.find(n => n.id === targetNodeId);
+        if (existing && eth0IpAddress) {
+          existing.fullAddress = eth0IpAddress;
+          existing.type = 'target'; // Upgrade to target type
+        }
       }
 
   // Preserve local interface info for the target node (do not create new nodes)
-      const localIfs = nodeInfo.local_ip_info || nodeInfo.local_ip_infos || [];
       if (Array.isArray(localIfs) && localIfs.length > 0) {
         const existingTarget = nodes.find(n => n.id === targetNodeId);
         if (existingTarget) {
@@ -94,7 +137,15 @@ export class NetworkDataAdapter {
         const interfaceType = neighInfo.interface || neighInfo.iface || 'eth0';
         if (!neighborId) return;
         if (!nodeMap.has(neighborId)) {
-          nodes.push({ id: neighborId, label: `Node ${neighborId}`, type: 'neighbor', interface: interfaceType });
+          // Use the neighbor IP as fullAddress if it's an IP address
+          const neighborFullAddress = (typeof rawNeighbor === 'string' && rawNeighbor.includes(':')) ? rawNeighbor : null;
+          nodes.push({ 
+            id: neighborId, 
+            label: `Node ${neighborId}`, 
+            type: 'neighbor', 
+            interface: interfaceType,
+            fullAddress: neighborFullAddress 
+          });
           nodeMap.set(neighborId, true);
         }
 
