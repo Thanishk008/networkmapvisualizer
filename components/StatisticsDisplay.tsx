@@ -100,6 +100,13 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
             </div>
           )}
 
+          {nodeData.ncaNumber && nodeData.nodeNumber && (
+            <div style={statRowStyle}>
+              <span style={labelStyle}>Group:</span>
+              <span style={valueStyle}>NCA : {nodeData.ncaNumber}, Node : {nodeData.nodeNumber}</span>
+            </div>
+          )}
+
       {nodeData.allLocalIps && nodeData.allLocalIps.length > 0 && (
         <div style={{ ...statRowStyle, marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${borderColor}`, flexDirection: 'column', gap: '5px' }}>
           <span style={{ ...labelStyle, marginBottom: '5px' }}>Local IP Addresses:</span>

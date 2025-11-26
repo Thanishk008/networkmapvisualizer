@@ -97,6 +97,16 @@ export default function NodeDetailsPanel({ nodeData, onClose, darkMode = false }
             Node {nodeData.nodeIdNumber}
           </p>
         )}
+        {nodeData.ncaNumber && nodeData.nodeNumber && (
+          <p style={{
+            margin: '8px 0 0 0',
+            fontSize: '13px',
+            color: valueColor,
+            fontWeight: '600',
+          }}>
+            Group: NCA : {nodeData.ncaNumber}, Node : {nodeData.nodeNumber}
+          </p>
+        )}
       </div>
 
       {/* Local IP Addresses Section */}

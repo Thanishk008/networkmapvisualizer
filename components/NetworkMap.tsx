@@ -135,15 +135,40 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
     fetch('/node-positions.json')
       .then(res => res.json())
       .then(data => {
-        // Create TWO maps:
+        // Create THREE maps:
         // 1. nodeName -> nodeId (for nodes with nodeName field)
         // 2. shortId -> nodeId (for nodes without nodeName, lookup by their short ID)
+        // 3. nodeName -> groupInfo (NCA number and node number within NCA)
         const nodeMap: Record<string, string> = {};
         const idMap: Record<string, string> = {};
+        const groupInfoMap: Record<string, { ncaNumber: string, nodeNumber: string }> = {};
         
         data.nodeInfo?.forEach((node: any) => {
           if (node.nodeName && node.nodeId) {
             nodeMap[node.nodeName] = node.nodeId;
+            
+            // Parse nodeLabelPath to extract NCA and Node numbers
+            // Format: "Root\NCA 4\Node 7\Hardware Layer\ANNCPU"
+            if (node.nodeLabelPath) {
+              const ncaMatch = node.nodeLabelPath.match(/NCA\s+(\d+)/);
+              const nodeMatch = node.nodeLabelPath.match(/Node\s+(\d+)/);
+              if (ncaMatch && nodeMatch) {
+                groupInfoMap[node.nodeName] = {
+                  ncaNumber: ncaMatch[1],
+                  nodeNumber: nodeMatch[1]
+                };
+                // Also store by shortId for nodes without nodeName
+                if (node.nodeName.startsWith('Node') && node.nodeName.length > 4) {
+                  const hexPart = node.nodeName.substring(4);
+                  const shortId = hexPart.substring(hexPart.length - 4);
+                  const normalizedShortId = parseInt(shortId, 16).toString(16);
+                  groupInfoMap[normalizedShortId] = {
+                    ncaNumber: ncaMatch[1],
+                    nodeNumber: nodeMatch[1]
+                  };
+                }
+              }
+            }
             
             // Also extract the short ID from nodeName and create reverse mapping
             // e.g., "Node00b01973dfaf" -> extract "dfaf" (last 4 hex chars)
@@ -158,7 +183,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         });
         
         // Combine both maps
-        const combinedMap = { ...nodeMap, ...idMap };
+        const combinedMap = { ...nodeMap, ...idMap, _groupInfo: groupInfoMap };
         setNodePositionData(combinedMap);
         nodePositionDataRef.current = combinedMap;
       })
@@ -348,7 +373,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         };
         
         // Store interface positions for later connection drawing
-        const interfacePositions = new Map<string, { x: number, y: number, nodeId: string, interface: string }>();
+        const interfacePositions = new Map<string, { x: number, y: number, nodeId: string, interface: string, side: string }>();
         
         // Draw interface labels in fixed positions for each node
         nodeEdgeInterfaces.forEach((interfacesMap, nodeId) => {
@@ -363,9 +388,19 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             const labelX = nodePos.x + pos.offsetX;
             const labelY = nodePos.y + pos.offsetY;
             
+            // Determine which side this interface is on
+            let side = 'top';
+            if (iface.interface.includes('eth1') || iface.interface.includes('e1')) {
+              side = 'right';
+            } else if (iface.interface.includes('usb0') || iface.interface.includes('u0')) {
+              side = 'bottom';
+            } else if (iface.interface.includes('usb1') || iface.interface.includes('u1')) {
+              side = 'left';
+            }
+            
             // Store position for connection drawing
             const key = `${nodeId}_${iface.interface}`;
-            interfacePositions.set(key, { x: labelX, y: labelY, nodeId, interface: iface.interface });
+            interfacePositions.set(key, { x: labelX, y: labelY, nodeId, interface: iface.interface, side });
             
             // Shorten interface name for display
             let displayName = iface.interface;
@@ -407,6 +442,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         // Draw physical connections from interface to interface (not node to node)
         // Deduplicate edges to avoid drawing the same connection multiple times
         const drawnConnections = new Set<string>();
+        const pathRegistry = new Map<string, number>(); // Track paths for offsetting
         
         edges.forEach((edge: any) => {
           if (edge.edgeType === 'direct') {
@@ -433,17 +469,102 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             if (drawnConnections.has(connectionKey)) return;
             drawnConnections.add(connectionKey);
             
-            // Draw line connecting the two interface boxes
+            // Get node positions for collision avoidance
+            const fromNodePos = network.getPosition(edge.from);
+            const toNodePos = network.getPosition(edge.to);
+            
+            // Calculate path signature for offset detection (to separate overlapping lines)
+            const pathSig = `${fromIface.side}-${toIface.side}-${Math.round(fromNodePos.x/100)}-${Math.round(fromNodePos.y/100)}`;
+            const pathCount = pathRegistry.get(pathSig) || 0;
+            pathRegistry.set(pathSig, pathCount + 1);
+            const lineOffset = pathCount * 8; // 8px separation between parallel lines
+            
+            // Draw orthogonal (right-angled) line connecting the two interface boxes
             ctx.save();
             ctx.strokeStyle = darkMode ? '#666' : '#bbb';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([5, 3]); // Dashed line for better visibility
             ctx.beginPath();
-            ctx.moveTo(fromIface.x, fromIface.y);
-            ctx.lineTo(toIface.x, toIface.y);
+            
+            // Calculate orthogonal path with right angles that avoids nodes and interfaces
+            const startX = fromIface.x;
+            const startY = fromIface.y;
+            const endX = toIface.x;
+            const endY = toIface.y;
+            
+            // Constants for routing
+            const nodeSize = 40; // Half of node box size
+            const interfaceBoxSize = 15; // Half width/height of interface box
+            const interfaceOffset = 50; // Distance of interface boxes from node center
+            const routingMargin = 25; // Extra margin to avoid interfaces
+            const totalClearance = nodeSize + interfaceOffset + interfaceBoxSize + routingMargin;
+            
+            ctx.moveTo(startX, startY);
+            
+            // Determine the interface positions relative to their nodes
+            const fromIfaceSide = fromIface.side; // 'top', 'right', 'bottom', 'left'
+            const toIfaceSide = toIface.side;
+            
+            // Calculate routing based on interface sides and node positions
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            
+            // Strategy: Route away from interfaces, then navigate around nodes
+            // Apply offset to separate overlapping parallel lines
+            
+            if (fromIfaceSide === 'top' || fromIfaceSide === 'bottom') {
+              // Start interface is vertical (top/bottom)
+              const extendY = fromIfaceSide === 'top' ? 
+                startY - totalClearance - lineOffset : startY + totalClearance + lineOffset;
+              
+              if (toIfaceSide === 'top' || toIfaceSide === 'bottom') {
+                // Both interfaces are vertical - route around sides
+                const midX = (startX + endX) / 2 + (lineOffset * (dx > 0 ? 1 : -1));
+                ctx.lineTo(startX, extendY);  // Extend away from node and interface
+                ctx.lineTo(midX, extendY);    // Horizontal to midpoint with offset
+                
+                const targetExtendY = toIfaceSide === 'top' ? 
+                  endY - totalClearance - lineOffset : endY + totalClearance + lineOffset;
+                ctx.lineTo(midX, targetExtendY); // Vertical to target level
+                ctx.lineTo(endX, targetExtendY); // Horizontal to target x
+                ctx.lineTo(endX, endY);          // Connect to interface
+              } else {
+                // End interface is horizontal (left/right)
+                const adjustedExtendY = extendY + (lineOffset * (dy > 0 ? 1 : -1));
+                ctx.lineTo(startX, adjustedExtendY);  // Extend away from node
+                ctx.lineTo(endX, adjustedExtendY);    // Horizontal to target x
+                ctx.lineTo(endX, endY);       // Connect to interface
+              }
+            } else {
+              // Start interface is horizontal (left/right)
+              const extendX = fromIfaceSide === 'left' ? 
+                startX - totalClearance - lineOffset : startX + totalClearance + lineOffset;
+              
+              if (toIfaceSide === 'left' || toIfaceSide === 'right') {
+                // Both interfaces are horizontal - route around top/bottom
+                const midY = (startY + endY) / 2 + (lineOffset * (dy > 0 ? 1 : -1));
+                ctx.lineTo(extendX, startY);  // Extend away from node and interface
+                ctx.lineTo(extendX, midY);    // Vertical to midpoint with offset
+                
+                const targetExtendX = toIfaceSide === 'left' ? 
+                  endX - totalClearance - lineOffset : endX + totalClearance + lineOffset;
+                ctx.lineTo(targetExtendX, midY); // Horizontal to target level
+                ctx.lineTo(targetExtendX, endY); // Vertical to target y
+                ctx.lineTo(endX, endY);          // Connect to interface
+              } else {
+                // End interface is vertical (top/bottom)
+                const adjustedExtendX = extendX + (lineOffset * (dx > 0 ? 1 : -1));
+                ctx.lineTo(adjustedExtendX, startY);  // Extend away from node
+                ctx.lineTo(adjustedExtendX, endY);    // Vertical to target y
+                ctx.lineTo(endX, endY);       // Connect to interface
+              }
+            }
+            
             ctx.stroke();
             ctx.setLineDash([]); // Reset line dash
-            ctx.restore();
+            ctx.restore;
           }
         });
       });
@@ -451,19 +572,31 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       network.on("hoverNode", (event) => {
         const nodeId = event.node
         const nodeData = (networkData.nodes || []).find((n: any) => n.id === nodeId)
-        // Add nodeId from node-positions.json if available
+        // Add nodeId and group info from node-positions.json if available
         if (nodeData && nodePositionDataRef.current) {
           // Try multiple lookup strategies:
           // 1. Use nodeName field (e.g., "Node00b01973dfaf")
           // 2. Use the node's short ID (e.g., "dfaf")
           // 3. Try fullAddress if it looks like a node name
           const nodeName = nodeData.nodeName;
+          let lookupKey = null;
+          
           if (nodeName && nodePositionDataRef.current[nodeName]) {
             nodeData.nodeIdNumber = nodePositionDataRef.current[nodeName];
+            lookupKey = nodeName;
           } else if (nodeData.id && nodePositionDataRef.current[nodeData.id]) {
             nodeData.nodeIdNumber = nodePositionDataRef.current[nodeData.id];
+            lookupKey = nodeData.id;
           } else if (nodeData.fullAddress && typeof nodeData.fullAddress === 'string' && nodeData.fullAddress.startsWith('Node')) {
             nodeData.nodeIdNumber = nodePositionDataRef.current[nodeData.fullAddress];
+            lookupKey = nodeData.fullAddress;
+          }
+          
+          // Add group info (NCA and node number within NCA)
+          if (lookupKey && nodePositionDataRef.current._groupInfo && nodePositionDataRef.current._groupInfo[lookupKey]) {
+            const groupInfo = nodePositionDataRef.current._groupInfo[lookupKey];
+            nodeData.ncaNumber = groupInfo.ncaNumber;
+            nodeData.nodeNumber = groupInfo.nodeNumber;
           }
         }
         if (onNodeHoverRef.current) {
@@ -475,16 +608,27 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         if (event.nodes.length > 0) {
           const nodeId = event.nodes[0]
           const nodeData = (networkData.nodes || []).find((n: any) => n.id === nodeId)
-          // Add nodeId from node-positions.json if available
+          // Add nodeId and group info from node-positions.json if available
           if (nodeData && nodePositionDataRef.current) {
             // Try multiple lookup strategies:
             // 1. Use nodeName field (e.g., "Node00b01973dfaf")
             // 2. Use the node's short ID (e.g., "dfaf")
             const nodeName = nodeData.nodeName;
+            let lookupKey = null;
+            
             if (nodeName && nodePositionDataRef.current[nodeName]) {
               nodeData.nodeIdNumber = nodePositionDataRef.current[nodeName];
+              lookupKey = nodeName;
             } else if (nodeData.id && nodePositionDataRef.current[nodeData.id]) {
               nodeData.nodeIdNumber = nodePositionDataRef.current[nodeData.id];
+              lookupKey = nodeData.id;
+            }
+            
+            // Add group info (NCA and node number within NCA)
+            if (lookupKey && nodePositionDataRef.current._groupInfo && nodePositionDataRef.current._groupInfo[lookupKey]) {
+              const groupInfo = nodePositionDataRef.current._groupInfo[lookupKey];
+              nodeData.ncaNumber = groupInfo.ncaNumber;
+              nodeData.nodeNumber = groupInfo.nodeNumber;
             }
           }
           if (onNodeClickRef.current) {
