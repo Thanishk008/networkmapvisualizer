@@ -394,13 +394,20 @@ export class NetworkDataAdapter {
 
     // Build IP-to-NodeID mapping using localIpInfo
     // Also store all local IPs for each node (to show in hover)
+    // AND store original node names for lookup
     const ipToNodeId = new Map<string, string>()
     const nodeLocalIps = new Map<string, Array<{interface: string, ip: string}>>()
+    const nodeIdToNodeName = new Map<string, string>()
     
     for (const entry of nodeEntries) {
       const targetRaw = entry.node_name || entry.nodeName || entry.name
       const { id: nodeId } = normalizeId(targetRaw)
       if (!nodeId) continue
+      
+      // Store the original node name for this nodeId
+      if (typeof targetRaw === 'string' && targetRaw.startsWith('Node')) {
+        nodeIdToNodeName.set(nodeId, targetRaw)
+      }
       
       const localIfs = entry.local_ip_info || entry.localIpInfo || entry.local_ip_infos || []
       const allLocalIps: Array<{interface: string, ip: string}> = []
@@ -515,6 +522,7 @@ export class NetworkDataAdapter {
       addNode(target, { 
         type: 'target', 
         fullAddress: targetFull,
+        nodeName: targetRaw, // Store original node name for lookup
         label: displayLabel, // Use short label
         allLocalIps: localIpsForNode 
       })
@@ -557,6 +565,7 @@ export class NetworkDataAdapter {
           type: 'neighbor', 
           interface: n.interface || n.iface || undefined, 
           fullAddress: neighborFull,
+          nodeName: nodeIdToNodeName.get(neighborId) || rawNeighbor, // Get original node name
           label: neighborDisplayLabel,
           allLocalIps: neighborLocalIps 
         })
@@ -667,6 +676,7 @@ export class NetworkDataAdapter {
           nextHop: nextHopId || undefined, 
           viaInterface: incomingInterface, 
           fullAddress: sourceFull,
+          nodeName: nodeIdToNodeName.get(sourceId) || rawSource, // Get original node name
           label: sourceDisplayLabel,
           allLocalIps: sourceLocalIps 
         })

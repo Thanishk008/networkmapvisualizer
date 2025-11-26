@@ -89,9 +89,16 @@ export default function StatisticsDisplay({ nodeData, position, darkMode = false
           </div>
 
           <div style={statRowStyle}>
-            <span style={labelStyle}>Node ID:</span>
+            <span style={labelStyle}>Node IP:</span>
             <span style={{ ...valueStyle, fontSize: '10px', wordBreak: 'break-all', fontFamily: 'monospace' }}>{nodeData.fullAddress}</span>
           </div>
+
+          {nodeData.nodeIdNumber && (
+            <div style={statRowStyle}>
+              <span style={labelStyle}>Node ID:</span>
+              <span style={valueStyle}>{nodeData.nodeIdNumber}</span>
+            </div>
+          )}
 
       {nodeData.allLocalIps && nodeData.allLocalIps.length > 0 && (
         <div style={{ ...statRowStyle, marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${borderColor}`, flexDirection: 'column', gap: '5px' }}>

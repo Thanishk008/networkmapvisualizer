@@ -87,6 +87,16 @@ export default function NodeDetailsPanel({ nodeData, onClose, darkMode = false }
         }}>
           {nodeData.fullAddress || nodeData.id}
         </p>
+        {nodeData.nodeIdNumber && (
+          <p style={{
+            margin: '8px 0 0 0',
+            fontSize: '13px',
+            color: valueColor,
+            fontWeight: '600',
+          }}>
+            Node {nodeData.nodeIdNumber}
+          </p>
+        )}
       </div>
 
       {/* Local IP Addresses Section */}
