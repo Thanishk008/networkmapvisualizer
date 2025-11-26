@@ -5,74 +5,80 @@ import { Network } from "vis-network"
 
 const getNetworkOptions = (darkMode: boolean) => ({
   nodes: {
-    shape: "dot",
-    size: 20,
+    shape: "box",
+    size: 25,
     font: {
-      size: 16,
-      color: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim() || (darkMode ? "#eee" : "#333"),
-      background: darkMode ? "rgba(35, 39, 47, 0.9)" : "rgba(255, 255, 255, 0.9)",
-      strokeWidth: 2,
-      strokeColor: darkMode ? "#23272f" : "#ffffff",
+      size: 14,
+      color: darkMode ? "#ffffff" : "#ffffff",
+      face: "Arial",
+      bold: { color: darkMode ? "#ffffff" : "#ffffff" }
     },
-    borderWidth: 2,
+    borderWidth: 3,
+    borderWidthSelected: 4,
     color: {
       border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || (darkMode ? "#45B7B8" : "#4ECDC4"),
-      background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || (darkMode ? "#2B7CE9" : "#97C2FC"),
+      background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || (darkMode ? "#4ECDC4" : "#4ECDC4"),
       highlight: {
         border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FF6B6B" : "#FFD166"),
         background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-route').trim() || (darkMode ? "#FF8844" : "#FFE5A0"),
       },
     },
+    shapeProperties: {
+      borderRadius: 4
+    }
   },
   edges: {
-    width: 2,
-    color: { color: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || (darkMode ? "#666" : "#848484") },
+    width: 0,
+    color: { color: 'transparent', opacity: 0 },
     smooth: {
-      enabled: true,
+      enabled: false,
       type: "continuous",
-      roundness: 0.2,
+      roundness: 0
     },
     arrows: {
       to: {
         enabled: false,
       },
     },
-    font: {
-      size: 14,
-      color: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim() || (darkMode ? "#eee" : "#333"),
-      background: darkMode ? "rgba(35, 39, 47, 0.8)" : "rgba(255, 255, 255, 0.8)",
-      strokeWidth: 0,
-    },
+    hidden: true
   },
   groups: {
     target: {
+      shape: "box",
+      color: {
+        background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4ECDC4",
+        border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#45B7B8",
+      },
+      size: 28,
+      shapeProperties: { borderRadius: 4 }
+    },
+    neighbor: {
+      shape: "box",
       color: {
         background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4ECDC4",
         border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#45B7B8",
       },
       size: 25,
-    },
-    neighbor: {
-      color: {
-        background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4ECDC4",
-        border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#45B7B8",
-      },
-      size: 20,
+      shapeProperties: { borderRadius: 4 }
     },
     source: {
       // Source nodes should not be auto-highlighted; use the physical link palette
+      shape: "box",
       color: {
         background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4ECDC4",
         border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#45B7B8",
       },
-      size: 15,
+      size: 22,
+      shapeProperties: { borderRadius: 4 }
     },
     router: {
+      shape: "box",
       color: {
         background: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4682B4",
         border: getComputedStyle(document.documentElement).getPropertyValue('--color-legend-phys').trim() || "#4682B4",
       },
-      size: 20,
+      size: 25,
+      shapeProperties: { borderRadius: 4 }
     },
   },
   physics: {
@@ -286,72 +292,119 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       const network = new Network(containerRef.current, updatedNetworkData, options);
       networkRef.current = network;
 
-      // Custom rendering for interface labels on edges
+      // Custom rendering: interface boxes in fixed positions (e0=top, e1=right, u0=bottom, u1=left)
       network.on("afterDrawing", function (ctx) {
         const positions = network.getPositions();
+        const nodeSize = 25; // Node box size from options
+        const interfaceBoxWidth = 24; // Width of interface label box
+        const interfaceBoxHeight = 18; // Height of interface label box
         
+        // Map interface names to fixed positions: e0=top, e1=right, u0=bottom, u1=left
+        const verticalDistance = 30; // Top and bottom distance
+        const horizontalDistance = 55; // Left and right distance
+        
+        const getInterfacePosition = (interfaceName: string) => {
+          const name = interfaceName.toLowerCase();
+          if (name.includes('eth0') || name.includes('e0')) {
+            // Top position
+            return { offsetX: 0, offsetY: -verticalDistance };
+          } else if (name.includes('eth1') || name.includes('e1')) {
+            // Right position
+            return { offsetX: horizontalDistance, offsetY: 0 };
+          } else if (name.includes('usb0') || name.includes('u0')) {
+            // Bottom position
+            return { offsetX: 0, offsetY: verticalDistance };
+          } else if (name.includes('usb1') || name.includes('u1')) {
+            // Left position
+            return { offsetX: -horizontalDistance, offsetY: 0 };
+          }
+          // Default fallback
+          return { offsetX: 0, offsetY: -verticalDistance };
+        };
+        
+        // Store interface positions for later connection drawing
+        const interfacePositions = new Map<string, { x: number, y: number, nodeId: string, interface: string }>();
+        
+        // Draw interface labels in fixed positions for each node
+        nodeEdgeInterfaces.forEach((interfaces, nodeId) => {
+          const nodePos = positions[nodeId];
+          if (!nodePos || interfaces.length === 0) return;
+          
+          // Draw each interface at its designated fixed position
+          interfaces.forEach((iface) => {
+            const pos = getInterfacePosition(iface.interface);
+            
+            // Position interface box at fixed position
+            const labelX = nodePos.x + pos.offsetX;
+            const labelY = nodePos.y + pos.offsetY;
+            
+            // Store position for connection drawing
+            const key = `${nodeId}_${iface.interface}`;
+            interfacePositions.set(key, { x: labelX, y: labelY, nodeId, interface: iface.interface });
+            
+            // Shorten interface name for display
+            let displayName = iface.interface;
+            if (displayName.startsWith('eth')) {
+              displayName = 'e' + displayName.substring(3);
+            } else if (displayName.startsWith('usb')) {
+              displayName = 'u' + displayName.substring(3);
+            } else if (displayName.length > 4) {
+              displayName = displayName.substring(0, 4);
+            }
+            
+            ctx.save();
+            
+            // Draw interface box (attached to node edge)
+            ctx.fillStyle = darkMode ? '#2c3e50' : '#34495e';
+            ctx.strokeStyle = darkMode ? '#34495e' : '#1a252f';
+            ctx.lineWidth = 2;
+            
+            const boxX = labelX - interfaceBoxWidth / 2;
+            const boxY = labelY - interfaceBoxHeight / 2;
+            
+            // Rounded rectangle for interface box
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, interfaceBoxWidth, interfaceBoxHeight, 3);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw interface text
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillText(displayName, labelX, labelY);
+            
+            ctx.restore();
+          });
+        });
+        
+        // Draw physical connections from interface to interface (not node to node)
         edges.forEach((edge: any) => {
           if (edge.edgeType === 'direct') {
-            const fromPos = positions[edge.from];
-            const toPos = positions[edge.to];
-            
-            if (!fromPos || !toPos) return;
-            
             const ifA = edge.interfaceA || '';
             const ifB = edge.interfaceB || '';
             
-            // Calculate edge direction vector
-            const dx = toPos.x - fromPos.x;
-            const dy = toPos.y - fromPos.y;
-            const length = Math.sqrt(dx * dx + dy * dy);
+            if (!ifA || !ifB) return;
             
-            if (length === 0) return;
+            // Get interface positions
+            const fromIfaceKey = `${edge.from}_${ifA}`;
+            const toIfaceKey = `${edge.to}_${ifB}`;
             
-            // Normalize direction vector
-            const ndx = dx / length;
-            const ndy = dy / length;
+            const fromIface = interfacePositions.get(fromIfaceKey);
+            const toIface = interfacePositions.get(toIfaceKey);
             
-            // Perpendicular vector for offset (rotate 90 degrees)
-            const perpX = -ndy;
-            const perpY = ndx;
+            if (!fromIface || !toIface) return;
             
-            // Position labels at 25% from each end along the edge
-            // and offset perpendicular to avoid node labels
-            const offsetDistance = 8; // pixels perpendicular offset
-            const alongEdge = 0.25; // 25% from each node
-            
-            const fromLabelX = fromPos.x + dx * alongEdge + perpX * offsetDistance;
-            const fromLabelY = fromPos.y + dy * alongEdge + perpY * offsetDistance;
-            const toLabelX = toPos.x - dx * alongEdge + perpX * offsetDistance;
-            const toLabelY = toPos.y - dy * alongEdge + perpY * offsetDistance;
-            
-            ctx.font = '11px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Draw background and label for interface A (near 'from' node)
-            if (ifA) {
-              const textWidth = ctx.measureText(ifA).width;
-              ctx.fillStyle = darkMode ? 'rgba(35, 39, 47, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-              ctx.fillRect(fromLabelX - textWidth/2 - 3, fromLabelY - 7, textWidth + 6, 14);
-              ctx.strokeStyle = darkMode ? 'rgba(100, 100, 100, 0.5)' : 'rgba(200, 200, 200, 0.5)';
-              ctx.lineWidth = 1;
-              ctx.strokeRect(fromLabelX - textWidth/2 - 3, fromLabelY - 7, textWidth + 6, 14);
-              ctx.fillStyle = darkMode ? '#eee' : '#333';
-              ctx.fillText(ifA, fromLabelX, fromLabelY);
-            }
-            
-            // Draw background and label for interface B (near 'to' node)
-            if (ifB) {
-              const textWidth = ctx.measureText(ifB).width;
-              ctx.fillStyle = darkMode ? 'rgba(35, 39, 47, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-              ctx.fillRect(toLabelX - textWidth/2 - 3, toLabelY - 7, textWidth + 6, 14);
-              ctx.strokeStyle = darkMode ? 'rgba(100, 100, 100, 0.5)' : 'rgba(200, 200, 200, 0.5)';
-              ctx.lineWidth = 1;
-              ctx.strokeRect(toLabelX - textWidth/2 - 3, toLabelY - 7, textWidth + 6, 14);
-              ctx.fillStyle = darkMode ? '#eee' : '#333';
-              ctx.fillText(ifB, toLabelX, toLabelY);
-            }
+            // Draw line connecting the two interface boxes
+            ctx.save();
+            ctx.strokeStyle = darkMode ? '#666' : '#999';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(fromIface.x, fromIface.y);
+            ctx.lineTo(toIface.x, toIface.y);
+            ctx.stroke();
+            ctx.restore();
           }
         });
       });
