@@ -10,16 +10,16 @@ import InfoPanel from "@/components/InfoPanel"
 // Dataset configuration - add new datasets here
 const DATASETS = {
   "Yoda 12 Node": {
-    dataFile: "/sample-backend-data-12Node.json",
-    positionsFile: "/node-positions-12.json"
+    dataFile: "/data-12Node.json",
+    positionsFile: "/query-12Node.json"
   },
   "Yoda 28 Node": {
-    dataFile: "/sample-backend-data-28Node.json",
-    positionsFile: "/node-positions-28.json"
+    dataFile: "/data-28Node.json",
+    positionsFile: "/query-28Node.json"
   },
   "EST4 150 Node": {
-    dataFile: "/sample-backend-data-150Node.json",
-    positionsFile: "/node-positions-150.json"
+    dataFile: "/data-150Node.json",
+    positionsFile: "/query-150Node.json"
   }
 } as const;
 
