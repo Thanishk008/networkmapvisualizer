@@ -33,6 +33,8 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
   const [pathHighlighted, setPathHighlighted] = useState(false)
   const [pathError, setPathError] = useState<string | null>(null)
   const [noPathExists, setNoPathExists] = useState(false)
+  // Store highlighted path info for custom canvas drawing
+  const [highlightedPathInfo, setHighlightedPathInfo] = useState<{ nodes: string[], edges: string[] } | null>(null)
 
   useEffect(() => {
     const loadBackendData = async () => {
@@ -437,6 +439,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
       setPathHighlighted(false)
       setNoPathExists(false)
+      setHighlightedPathInfo(null)  // Clear path info
       return
     }
     
@@ -449,23 +452,37 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
     try {
       const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget, rawBackendData)
       const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
-      const highlightEdgeStyle = { color: highlightColor, width: 6, dashes: true, shadow: true, animation: true }
       const highlightNodeStyle = { color: { background: highlightColor, border: highlightColor }, borderWidth: 4 }
       
-      // Dim non-highlighted elements
+      // Dim non-highlighted nodes but NOT intermediate path nodes
+      // Source and target get highlight style, intermediate path nodes stay normal, others get dimmed
       const dimColor = darkMode ? "#444" : "#ccc"
-      const dimEdgeStyle = { color: dimColor, width: 1, opacity: 0.3 }
       const dimNodeStyle = { color: { background: dimColor, border: dimColor }, opacity: 0.4 }
 
-      const nodes = physData.nodes.map((n: any) => 
-        pathNodes.includes(n.id) ? { ...n, ...highlightNodeStyle } : { ...n, ...dimNodeStyle }
-      )
-      const edges = physData.edges.map((e: any) => 
-        pathEdges.includes(e.id) ? { ...e, ...highlightEdgeStyle } : { ...e, ...dimEdgeStyle }
-      )
-      setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges }))
-      // If a path with at least source and target exists, mark highlighted
+      const nodes = physData.nodes.map((n: any) => {
+        const isSource = n.id === selectedSource
+        const isTarget = n.id === selectedTarget
+        const isOnPath = pathNodes.includes(n.id)
+        
+        if (isSource || isTarget) {
+          // Source and target get highlight
+          return { ...n, ...highlightNodeStyle }
+        } else if (isOnPath) {
+          // Intermediate path nodes stay normal (no style change)
+          return n
+        } else {
+          // All other nodes get dimmed
+          return { ...n, ...dimNodeStyle }
+        }
+      })
+      
+      // Note: edges are drawn via custom canvas, so we don't modify them here
+      // Just pass the data through, the highlighting is handled in NetworkMap
+      setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges: physData.edges }))
+      
+      // Store path info for custom canvas drawing
       const hasPath = (pathNodes || []).length > 1
+      setHighlightedPathInfo(hasPath ? { nodes: pathNodes, edges: pathEdges } : null)
       setPathHighlighted(hasPath)
       setNoPathExists(!hasPath)
     } catch (err: any) {
@@ -473,6 +490,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
       setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
       setPathHighlighted(false)
       setNoPathExists(true)
+      setHighlightedPathInfo(null)
     }
   }, [rawBackendData, selectedSource, selectedTarget, darkMode])
 
@@ -628,6 +646,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
               selectedNode={selectedNode}
               onNodeBlur={handleNodeBlur}
               positionsFile={positionsFile}
+              highlightedPath={highlightedPathInfo}
             />
             {hoveredNode && (
               <StatisticsDisplay nodeData={hoveredNode} position={mousePosition} darkMode={darkMode} selectedSource={selectedSource} selectedTarget={selectedTarget} />

@@ -111,14 +111,16 @@ interface NetworkMapProps {
   darkMode?: boolean
   selectedNode?: any
   positionsFile?: string
+  highlightedPath?: { nodes: string[], edges: string[] } | null  // For source-target path highlighting
 }
 
 
-export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNodeBlur, darkMode = false, selectedNode, positionsFile = "/node-positions-150.json" }: NetworkMapProps) {
+export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNodeBlur, darkMode = false, selectedNode, positionsFile = "/node-positions-150.json", highlightedPath }: NetworkMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
   const [nodePositionData, setNodePositionData] = useState<any>(null)
   const nodePositionDataRef = useRef<any>(null)
+  const [clickHighlightedNode, setClickHighlightedNode] = useState<string | null>(null) // For click-to-highlight feature
   
   // Use refs for callbacks to avoid dependency array issues
   const onNodeHoverRef = useRef(onNodeHover)
@@ -508,6 +510,49 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
           return x;
         };
         
+        // ============================================
+        // UNIQUE EDGE COLORING SYSTEM
+        // ============================================
+        // Generate a unique muted color for each edge using HSL
+        // This makes each path visually distinguishable while keeping them subtle
+        const generateEdgeColor = (index: number, totalEdges: number): string => {
+          // Evenly distribute hues across the color wheel
+          const hue = (index * 360 / Math.max(totalEdges, 1)) % 360;
+          // Muted: low saturation, medium lightness for dark mode, slightly different for light
+          const saturation = darkMode ? 45 : 50;
+          const lightness = darkMode ? 50 : 45;
+          return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        };
+        
+        // Build edge color map - assign each unique edge a color
+        const edgeColorMap = new Map<string, string>();
+        let edgeIndex = 0;
+        const directEdges = edges.filter((e: any) => e.edgeType === 'direct');
+        directEdges.forEach((edge: any) => {
+          const edgeKey = `${edge.from}-${edge.to}-${edge.interfaceA}-${edge.interfaceB}`;
+          if (!edgeColorMap.has(edgeKey)) {
+            edgeColorMap.set(edgeKey, generateEdgeColor(edgeIndex, directEdges.length));
+            edgeIndex++;
+          }
+        });
+        
+        // Determine which edges/nodes should be highlighted or dimmed
+        // Priority: highlightedPath (source-target) > clickHighlightedNode > normal
+        const clickConnectedEdges = new Set<string>();
+        const clickConnectedNodes = new Set<string>();
+        
+        if (clickHighlightedNode && !highlightedPath) {
+          // Find all edges connected to the click-highlighted node
+          directEdges.forEach((edge: any) => {
+            if (edge.from === clickHighlightedNode || edge.to === clickHighlightedNode) {
+              const edgeKey = `${edge.from}-${edge.to}-${edge.interfaceA}-${edge.interfaceB}`;
+              clickConnectedEdges.add(edgeKey);
+              clickConnectedNodes.add(edge.from);
+              clickConnectedNodes.add(edge.to);
+            }
+          });
+        }
+        
         // Draw physical connections from interface to interface (not node to node)
         // Deduplicate edges to avoid drawing the same connection multiple times
         const drawnConnections = new Set<string>();
@@ -563,11 +608,51 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             // Helper to alternate offsets (0, +6, -6, +12, -12...) to keep bundle centered-ish
             const getOffset = (idx: number) => (idx === 0 ? 0 : (idx % 2 === 0 ? -1 : 1) * Math.ceil(idx / 2) * interfaceSpacing);
             
+            // Determine edge styling based on highlight state
+            const edgeKey = `${edge.from}-${edge.to}-${edge.interfaceA}-${edge.interfaceB}`;
+            const baseEdgeColor = edgeColorMap.get(edgeKey) || (darkMode ? '#666' : '#bbb');
+            
+            // Check if this edge is part of the highlighted path (source-target selection)
+            const isPathHighlighted = highlightedPath && highlightedPath.edges && highlightedPath.edges.includes(edge.id);
+            // Check if this edge is connected to the click-highlighted node
+            const isClickHighlighted = clickConnectedEdges.has(edgeKey);
+            // Check if we're in a highlight mode but this edge is NOT highlighted
+            const isInHighlightMode = highlightedPath || clickHighlightedNode;
+            const shouldDim = isInHighlightMode && !isPathHighlighted && !isClickHighlighted;
+            
+            // Set edge style based on state
+            let edgeColor: string;
+            let edgeWidth: number;
+            let edgeOpacity: number;
+            
+            if (isPathHighlighted) {
+              // Source-target path: bright, thick, fully visible
+              edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || '#FFD166';
+              edgeWidth = 3;
+              edgeOpacity = 1;
+            } else if (isClickHighlighted) {
+              // Click-highlighted connections: use edge's unique color but brighter/thicker
+              edgeColor = baseEdgeColor;
+              edgeWidth = 2.5;
+              edgeOpacity = 1;
+            } else if (shouldDim) {
+              // Not highlighted, in highlight mode: very dim
+              edgeColor = darkMode ? '#444' : '#ddd';
+              edgeWidth = 1;
+              edgeOpacity = 0.3;
+            } else {
+              // Normal state: unique muted color
+              edgeColor = baseEdgeColor;
+              edgeWidth = 1.5;
+              edgeOpacity = 0.6;
+            }
+            
             // Draw orthogonal (right-angled) line connecting the two interface boxes
             ctx.save();
-            ctx.strokeStyle = darkMode ? '#666' : '#bbb';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([5, 3]); // Dashed line for better visibility
+            ctx.strokeStyle = edgeColor;
+            ctx.lineWidth = edgeWidth;
+            ctx.globalAlpha = edgeOpacity;
+            ctx.setLineDash(isPathHighlighted ? [] : [5, 3]); // Solid for highlighted path, dashed for others
             ctx.beginPath();
             
             // Calculate orthogonal path with right angles that avoids nodes and interfaces
@@ -783,10 +868,12 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 ctx.lineTo(endX, endY);
                 
                 ctx.stroke();
+                ctx.globalAlpha = 1; // Reset alpha for markers
                 
                 const markerSize = 4;
-                ctx.strokeStyle = darkMode ? '#888' : '#999';
-                ctx.lineWidth = 2;
+                // Use edge color for corner markers, slightly brighter
+                ctx.strokeStyle = isPathHighlighted ? edgeColor : (isClickHighlighted ? edgeColor : (shouldDim ? (darkMode ? '#555' : '#ccc') : edgeColor));
+                ctx.lineWidth = isPathHighlighted ? 2.5 : 2;
                 ctx.setLineDash([]);
                 
                 // Draw L-bracket at corner: fromDir is vector pointing BACK to where we came from
@@ -816,10 +903,6 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 drawCorner(midX, extendY, startX - midX, 0, 0, targetExtendY - extendY);
                 drawCorner(midX, targetExtendY, 0, extendY - targetExtendY, endX - midX, 0);
                 drawCorner(endX, targetExtendY, midX - endX, 0, 0, endY - targetExtendY);
-                
-                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([5, 3]);
               } else {
                 // End interface is horizontal (left/right)
                 // Route with right angles only: vertical -> horizontal -> vertical -> horizontal
@@ -895,11 +978,6 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 drawCorner(targetExtendX, extendY, startX - targetExtendX, 0, 0, endY - extendY);
                 // Corner 3: (targetExtendX, endY) - vertical to horizontal
                 drawCorner(targetExtendX, endY, 0, extendY - endY, endX - targetExtendX, 0);
-                
-                // Reset styles for next connection
-                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([5, 3]);
               }
             } else {
               // Start interface is horizontal (left/right)
@@ -964,10 +1042,11 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 ctx.lineTo(endX, endY);
                 
                 ctx.stroke();
+                ctx.globalAlpha = 1; // Reset alpha for markers
                 
                 const markerSize = 4;
-                ctx.strokeStyle = darkMode ? '#888' : '#999';
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = isPathHighlighted ? edgeColor : (isClickHighlighted ? edgeColor : (shouldDim ? (darkMode ? '#555' : '#ccc') : edgeColor));
+                ctx.lineWidth = isPathHighlighted ? 2.5 : 2;
                 ctx.setLineDash([]);
                 
                 // Draw L-bracket at corner
@@ -995,10 +1074,6 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 drawCorner(extendX, midY, 0, startY - midY, targetExtendX - extendX, 0);
                 drawCorner(targetExtendX, midY, extendX - targetExtendX, 0, 0, endY - midY);
                 drawCorner(targetExtendX, endY, 0, midY - endY, endX - targetExtendX, 0);
-                
-                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([5, 3]);
               } else {
                 // End interface is vertical (top/bottom)
                 // Route with right angles only: horizontal -> vertical -> horizontal -> vertical
@@ -1040,11 +1115,12 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 ctx.lineTo(endX, endY);              // Vertical: to interface edge
                 
                 ctx.stroke();
+                ctx.globalAlpha = 1; // Reset alpha for markers
                 
                 // Draw L-bracket corner markers only at actual 90-degree turns
                 const markerSize = 4;
-                ctx.strokeStyle = darkMode ? '#888' : '#999';
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = isPathHighlighted ? edgeColor : (isClickHighlighted ? edgeColor : (shouldDim ? (darkMode ? '#555' : '#ccc') : edgeColor));
+                ctx.lineWidth = isPathHighlighted ? 2.5 : 2;
                 ctx.setLineDash([]);
                 
                 // Draw L-bracket at corner
@@ -1074,16 +1150,11 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 drawCorner(extendX, targetExtendY, 0, startY - targetExtendY, endX - extendX, 0);
                 // Corner 3: (endX, targetExtendY) - horizontal to vertical turn
                 drawCorner(endX, targetExtendY, extendX - endX, 0, 0, endY - targetExtendY);
-                
-                // Reset styles for next connection
-                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([5, 3]);
               }
             }
             
             ctx.setLineDash([]); // Reset line dash
-            ctx.restore;
+            ctx.restore();
           }
         });
       });
@@ -1127,6 +1198,10 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         if (event.nodes.length > 0) {
           const nodeId = event.nodes[0]
           const nodeData = (networkData.nodes || []).find((n: any) => n.id === nodeId)
+          
+          // Toggle click highlight: click same node to unhighlight, different node to switch
+          setClickHighlightedNode(prev => prev === nodeId ? null : nodeId);
+          
           // Add nodeId and group info from node-positions.json if available
           if (nodeData && nodePositionDataRef.current) {
             // Try multiple lookup strategies:
@@ -1154,6 +1229,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             onNodeClickRef.current(nodeData)
           }
         } else {
+          // Clicked on empty space - clear click highlight
+          setClickHighlightedNode(null);
           if (onNodeClickRef.current) {
             onNodeClickRef.current(null)
           }
@@ -1172,7 +1249,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         }
       }
     }
-  }, [networkData, darkMode, selectedNode, nodePositionData])
+  }, [networkData, darkMode, selectedNode, nodePositionData, clickHighlightedNode, highlightedPath])
 
   const hasNodes = Array.isArray(networkData?.nodes) && networkData.nodes.length > 0
   const hasEdges = Array.isArray(networkData?.edges) && networkData.edges.length > 0
