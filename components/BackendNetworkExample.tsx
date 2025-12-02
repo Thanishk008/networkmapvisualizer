@@ -402,9 +402,16 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
 
   const handleRefreshData = async () => {
     setLoading(true)
+    // Reset path-related state on refresh
+    setSelectedSource('')
+    setSelectedTarget('')
+    setPathHighlighted(false)
+    setPathError(null)
+    setNoPathExists(false)
+    setHighlightedPathInfo(null)
     try {
       setError(null)
-      const response = await fetch("/sample-backend-data.json")
+      const response = await fetch(`${dataFile}?t=${Date.now()}`)
       if (!response.ok) {
         throw new Error(`Failed to load backend data: ${response.status} ${response.statusText}`)
       }
@@ -602,6 +609,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
               onClick={() => {
                 setSelectedSource(''); setSelectedTarget(''); setPathError('');
                 setNoPathExists(false)
+                setHighlightedPathInfo(null)  // Clear path highlighting
                 if (rawBackendData) {
                   const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
                   setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
