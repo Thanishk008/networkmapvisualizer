@@ -10,10 +10,12 @@ import { NetworkDataAdapter } from "@/utils/dataAdapter"
 
 interface BackendNetworkExampleProps {
   darkMode: boolean
+  dataFile: string
+  positionsFile: string
   onNodeClick?: (nodeData: any) => void
 }
 
-export default function BackendNetworkExample({ darkMode, onNodeClick }: BackendNetworkExampleProps) {
+export default function BackendNetworkExample({ darkMode, dataFile, positionsFile, onNodeClick }: BackendNetworkExampleProps) {
   // Ensure hover is cleared on blur
   const handleNodeBlur = useCallback(() => {
     setHoveredNode(null);
@@ -37,19 +39,26 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch(`/sample-backend-data.json?t=${Date.now()}`)
+        // Clear previous selections when dataset changes
+        setSelectedSource("")
+        setSelectedTarget("")
+        setPathHighlighted(false)
+        setPathError(null)
+        setNoPathExists(false)
+        
+        const response = await fetch(`${dataFile}?t=${Date.now()}`)
         if (!response.ok) {
           throw new Error(`Failed to load backend data: ${response.status} ${response.statusText}`)
         }
         const rawData = await response.json()
-        console.log("[v0] Loaded raw backend data:", rawData)
+        console.log(`[v0] Loaded raw backend data from ${dataFile}:`, rawData)
 
         const physData = NetworkDataAdapter.convertPhysicalOnly(rawData)
         console.log("[v0] Converted to physical data:", physData)
 
         if (!physData || !physData.nodes || physData.nodes.length === 0) {
           setError(
-            "Backend data is missing or malformed. Check sample-backend-data.json and ensure it is in the public folder and matches the expected format.",
+            `Backend data is missing or malformed. Check ${dataFile} and ensure it is in the public folder and matches the expected format.`,
           )
           setNetworkData(null)
           return
@@ -65,7 +74,7 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
       }
     }
     loadBackendData()
-  }, [darkMode])
+  }, [darkMode, dataFile])
 
   // Helper: compute connected interfaces for a given node by scanning physical nodes/edges
   const computeConnectedInterfaces = useCallback((nodeId: string) => {
@@ -522,9 +531,11 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
   return (
     <div onMouseMove={handleMouseMove} style={{ width: "100%", height: "100%" }}>
       <div className="network-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ flex: '0 0 auto' }}>
-          <h2 className="network-title">Network Map</h2>
-          <p className="network-subtitle">Select a source and target to visualize a path.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: '0 0 auto' }}>
+          <div>
+            <h2 className="network-title">Network Map</h2>
+            <p className="network-subtitle">Select a source and target to visualize a path.</p>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 auto', justifyContent: 'center' }}>
@@ -616,6 +627,7 @@ export default function BackendNetworkExample({ darkMode, onNodeClick }: Backend
               darkMode={darkMode}
               selectedNode={selectedNode}
               onNodeBlur={handleNodeBlur}
+              positionsFile={positionsFile}
             />
             {hoveredNode && (
               <StatisticsDisplay nodeData={hoveredNode} position={mousePosition} darkMode={darkMode} selectedSource={selectedSource} selectedTarget={selectedTarget} />

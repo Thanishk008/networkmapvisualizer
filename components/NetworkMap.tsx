@@ -110,10 +110,11 @@ interface NetworkMapProps {
   onNodeBlur?: () => void
   darkMode?: boolean
   selectedNode?: any
+  positionsFile?: string
 }
 
 
-export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNodeBlur, darkMode = false, selectedNode }: NetworkMapProps) {
+export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNodeBlur, darkMode = false, selectedNode, positionsFile = "/node-positions-150.json" }: NetworkMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
   const [nodePositionData, setNodePositionData] = useState<any>(null)
@@ -130,9 +131,9 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
     onNodeBlurRef.current = onNodeBlur
   })
 
-  // Load node position data on mount
+  // Load node position data when positionsFile changes
   useEffect(() => {
-    fetch('/node-positions.json')
+    fetch(positionsFile)
       .then(res => res.json())
       .then(data => {
         // Create THREE maps:
@@ -188,7 +189,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         nodePositionDataRef.current = combinedMap;
       })
       .catch(err => console.error('Failed to load node positions:', err));
-  }, []);
+  }, [positionsFile]);
 
   useEffect(() => {
     if (containerRef.current && networkData && nodePositionData) {
@@ -439,10 +440,78 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
           });
         });
         
+        // ============================================
+        // GLOBAL LANE-BASED ROUTING SYSTEM
+        // ============================================
+        // Every horizontal and vertical line segment gets a unique "track" to prevent overlap.
+        // We track ALL Y-coordinates used by horizontal segments and ALL X-coordinates used by vertical segments.
+        
+        const LANE_SPACING = 4; // Pixels between each lane - smaller for more lanes
+        
+        // Global sets to track which exact coordinates are already used
+        const usedHorizontalY = new Set<number>(); // All Y coords used by horizontal segments
+        const usedVerticalX = new Set<number>();   // All X coords used by vertical segments
+        
+        // Helper: Get the next available Y coordinate for a horizontal segment
+        // Starting from a preferred Y and searching ONLY in the specified direction
+        // to avoid reversing back into node exclusion zones
+        const getAvailableHorizontalY = (preferredY: number, searchDirection: 'up' | 'down' | 'both' = 'both'): number => {
+          // Round to lane spacing for alignment
+          let y = Math.round(preferredY / LANE_SPACING) * LANE_SPACING;
+          
+          if (searchDirection === 'both') {
+            // Search outward from preferred position - try alternating directions
+            let offset = 0;
+            let direction = 1;
+            while (usedHorizontalY.has(y) && offset < 1000) {
+              offset += LANE_SPACING;
+              direction *= -1;
+              y = Math.round(preferredY / LANE_SPACING) * LANE_SPACING + direction * Math.ceil(offset / (2 * LANE_SPACING)) * LANE_SPACING;
+            }
+          } else {
+            // Search only in specified direction to avoid going back into nodes
+            const step = searchDirection === 'up' ? -LANE_SPACING : LANE_SPACING;
+            let attempts = 0;
+            while (usedHorizontalY.has(y) && attempts < 250) {
+              y += step;
+              attempts++;
+            }
+          }
+          usedHorizontalY.add(y);
+          return y;
+        };
+        
+        // Helper: Get the next available X coordinate for a vertical segment
+        const getAvailableVerticalX = (preferredX: number, searchDirection: 'left' | 'right' | 'both' = 'both'): number => {
+          // Round to lane spacing for alignment
+          let x = Math.round(preferredX / LANE_SPACING) * LANE_SPACING;
+          
+          if (searchDirection === 'both') {
+            // Search outward from preferred position - try alternating directions
+            let offset = 0;
+            let direction = 1;
+            while (usedVerticalX.has(x) && offset < 1000) {
+              offset += LANE_SPACING;
+              direction *= -1;
+              x = Math.round(preferredX / LANE_SPACING) * LANE_SPACING + direction * Math.ceil(offset / (2 * LANE_SPACING)) * LANE_SPACING;
+            }
+          } else {
+            // Search only in specified direction to avoid going back into nodes
+            const step = searchDirection === 'left' ? -LANE_SPACING : LANE_SPACING;
+            let attempts = 0;
+            while (usedVerticalX.has(x) && attempts < 250) {
+              x += step;
+              attempts++;
+            }
+          }
+          usedVerticalX.add(x);
+          return x;
+        };
+        
         // Draw physical connections from interface to interface (not node to node)
         // Deduplicate edges to avoid drawing the same connection multiple times
         const drawnConnections = new Set<string>();
-        const pathRegistry = new Map<string, number>(); // Track paths for offsetting
+        const interfaceConnectionCount = new Map<string, number>(); // Track connections per interface
         
         edges.forEach((edge: any) => {
           if (edge.edgeType === 'direct') {
@@ -469,15 +538,30 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             if (drawnConnections.has(connectionKey)) return;
             drawnConnections.add(connectionKey);
             
+            // Determine routing type based on interface sides
+            const isFromHorizontal = fromIface.side === 'left' || fromIface.side === 'right';
+            const isToHorizontal = toIface.side === 'left' || toIface.side === 'right';
+            
+            // Track connections per interface SIDE for initial spacing
+            // Use side-based keys to ensure multiple interfaces on the same side (e.g. eth0, eth2 both on Top)
+            // share the same counter and get spaced out properly to avoid overlaps.
+            const fromSideKey = `${edge.from}_${fromIface.side}`;
+            const toSideKey = `${edge.to}_${toIface.side}`;
+            
+            const fromIfaceConnectionCount = interfaceConnectionCount.get(fromSideKey) || 0;
+            const toIfaceConnectionCount = interfaceConnectionCount.get(toSideKey) || 0;
+            interfaceConnectionCount.set(fromSideKey, fromIfaceConnectionCount + 1);
+            interfaceConnectionCount.set(toSideKey, toIfaceConnectionCount + 1);
+            
             // Get node positions for collision avoidance
             const fromNodePos = network.getPosition(edge.from);
             const toNodePos = network.getPosition(edge.to);
             
-            // Calculate path signature for offset detection (to separate overlapping lines)
-            const pathSig = `${fromIface.side}-${toIface.side}-${Math.round(fromNodePos.x/100)}-${Math.round(fromNodePos.y/100)}`;
-            const pathCount = pathRegistry.get(pathSig) || 0;
-            pathRegistry.set(pathSig, pathCount + 1);
-            const lineOffset = pathCount * 8; // 8px separation between parallel lines
+            // Add small offset at origin for connections from same interface
+            const interfaceSpacing = 6; // Increased spacing for better visibility
+            
+            // Helper to alternate offsets (0, +6, -6, +12, -12...) to keep bundle centered-ish
+            const getOffset = (idx: number) => (idx === 0 ? 0 : (idx % 2 === 0 ? -1 : 1) * Math.ceil(idx / 2) * interfaceSpacing);
             
             // Draw orthogonal (right-angled) line connecting the two interface boxes
             ctx.save();
@@ -487,17 +571,70 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             ctx.beginPath();
             
             // Calculate orthogonal path with right angles that avoids nodes and interfaces
-            const startX = fromIface.x;
-            const startY = fromIface.y;
-            const endX = toIface.x;
-            const endY = toIface.y;
+            // Start at the center of interface boxes
+            const centerStartX = fromIface.x;
+            const centerStartY = fromIface.y;
+            const centerEndX = toIface.x;
+            const centerEndY = toIface.y;
             
             // Constants for routing
             const nodeSize = 40; // Half of node box size
-            const interfaceBoxSize = 15; // Half width/height of interface box
+            const interfaceBoxSize = 15; // Full width/height of interface box
             const interfaceOffset = 50; // Distance of interface boxes from node center
-            const routingMargin = 25; // Extra margin to avoid interfaces
-            const totalClearance = nodeSize + interfaceOffset + interfaceBoxSize + routingMargin;
+            const clearanceFromInterface = 35; // Extra space from interface box edge (increased for better separation)
+            
+            // Calculate actual start and end points at the center of the interface box edge
+            // that faces the direction of the connection
+            let startX = centerStartX;
+            let startY = centerStartY;
+            let endX = centerEndX;
+            let endY = centerEndY;
+            
+            // Determine which edge of the interface box to connect to based on connection direction
+            // For start interface: connect at the edge facing towards the end interface
+            const startToEndDx = centerEndX - centerStartX;
+            const startToEndDy = centerEndY - centerStartY;
+            
+            // Store unmodified base Y positions for calculating horizontal corridors
+            let baseStartY = centerStartY;
+            let baseEndY = centerEndY;
+            
+            if (fromIface.side === 'top' || fromIface.side === 'bottom') {
+              // Interface is on top/bottom of node - connect at vertical edge
+              startY = fromIface.side === 'top' ? 
+                centerStartY - interfaceBoxSize / 2 : // Top edge of interface box
+                centerStartY + interfaceBoxSize / 2;  // Bottom edge of interface box
+              baseStartY = startY; // Update base for vertical interfaces
+              // Add horizontal offset for multiple connections from same interface
+              startX = centerStartX + getOffset(fromIfaceConnectionCount);
+            } else {
+              // Interface is on left/right of node - connect at horizontal edge
+              startX = fromIface.side === 'left' ? 
+                centerStartX - interfaceBoxSize / 2 : // Left edge of interface box
+                centerStartX + interfaceBoxSize / 2;  // Right edge of interface box
+              // Add vertical offset for multiple connections from same interface
+              startY = centerStartY + getOffset(fromIfaceConnectionCount);
+              // baseStartY stays as centerStartY for horizontal interfaces
+            }
+            
+            // For end interface: connect at the edge facing towards the start interface
+            if (toIface.side === 'top' || toIface.side === 'bottom') {
+              // Interface is on top/bottom of node - connect at vertical edge
+              endY = toIface.side === 'top' ? 
+                centerEndY - interfaceBoxSize / 2 : // Top edge of interface box
+                centerEndY + interfaceBoxSize / 2;  // Bottom edge of interface box
+              baseEndY = endY; // Update base for vertical interfaces
+              // Add horizontal offset for multiple connections to same interface
+              endX = centerEndX + getOffset(toIfaceConnectionCount);
+            } else {
+              // Interface is on left/right of node - connect at horizontal edge
+              endX = toIface.side === 'left' ? 
+                centerEndX - interfaceBoxSize / 2 : // Left edge of interface box
+                centerEndX + interfaceBoxSize / 2;  // Right edge of interface box
+              // Add vertical offset for multiple connections to same interface
+              endY = centerEndY + getOffset(toIfaceConnectionCount);
+              // baseEndY stays as centerEndY for horizontal interfaces
+            }
             
             ctx.moveTo(startX, startY);
             
@@ -508,61 +645,443 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             // Calculate routing based on interface sides and node positions
             const dx = endX - startX;
             const dy = endY - startY;
-            const absDx = Math.abs(dx);
-            const absDy = Math.abs(dy);
             
-            // Strategy: Route away from interfaces, then navigate around nodes
-            // Apply offset to separate overlapping parallel lines
+            // Define exclusion zones for nodes (node box + gap to interfaces)
+            // The exclusion zone extends from node center to beyond the interface boxes
+            // Define exclusion zones for nodes - MUCH larger to account for:
+            // - Node box itself (~25px)
+            // - Interface boxes around it (up to 55px away + 12px half-width)
+            // - Extra padding to ensure lines don't get too close
+            const nodeExclusionHalfSizeX = horizontalDistance + interfaceBoxWidth / 2 + 25; // ~92px for left/right
+            const nodeExclusionHalfSizeY = verticalDistance + interfaceBoxHeight / 2 + 25; // ~64px for top/bottom
+            
+            // Get all node positions for collision checking
+            const allNodePositions = Object.entries(positions).map(([id, pos]: [string, any]) => ({
+              id,
+              x: pos.x,
+              y: pos.y
+            }));
+            
+            // Helper to check if a horizontal segment at Y would pass through ANY node's exclusion zone
+            const wouldCrossAnyNodeHorizontally = (y: number, x1: number, x2: number, excludeNodeIds: string[] = []) => {
+              const minX = Math.min(x1, x2);
+              const maxX = Math.max(x1, x2);
+              return allNodePositions.some(nodePos => {
+                if (excludeNodeIds.includes(nodePos.id)) return false;
+                // Check if Y is within node's vertical exclusion zone AND segment's X range overlaps node's X zone
+                return y > nodePos.y - nodeExclusionHalfSizeY && 
+                       y < nodePos.y + nodeExclusionHalfSizeY &&
+                       maxX > nodePos.x - nodeExclusionHalfSizeX &&
+                       minX < nodePos.x + nodeExclusionHalfSizeX;
+              });
+            };
+            
+            // Helper to check if a vertical segment at X would pass through ANY node's exclusion zone
+            const wouldCrossAnyNodeVertically = (x: number, y1: number, y2: number, excludeNodeIds: string[] = []) => {
+              const minY = Math.min(y1, y2);
+              const maxY = Math.max(y1, y2);
+              return allNodePositions.some(nodePos => {
+                if (excludeNodeIds.includes(nodePos.id)) return false;
+                // Check if X is within node's horizontal exclusion zone AND segment's Y range overlaps node's Y zone
+                return x > nodePos.x - nodeExclusionHalfSizeX && 
+                       x < nodePos.x + nodeExclusionHalfSizeX &&
+                       maxY > nodePos.y - nodeExclusionHalfSizeY &&
+                       minY < nodePos.y + nodeExclusionHalfSizeY;
+              });
+            };
+            
+            // Collision avoidance step - use larger steps for faster escape from node zones
+            const COLLISION_STEP = 15;
+            
+            // Helper to find a safe horizontal Y that doesn't cross any nodes
+            const findSafeHorizontalY = (preferredY: number, x1: number, x2: number, direction: 'up' | 'down', excludeNodeIds: string[] = []): number => {
+              let y = preferredY;
+              let attempts = 0;
+              while (wouldCrossAnyNodeHorizontally(y, x1, x2, excludeNodeIds) && attempts < 200) {
+                y = direction === 'up' ? y - COLLISION_STEP : y + COLLISION_STEP;
+                attempts++;
+              }
+              return y;
+            };
+            
+            // Helper to find a safe vertical X that doesn't cross any nodes
+            const findSafeVerticalX = (preferredX: number, y1: number, y2: number, direction: 'left' | 'right', excludeNodeIds: string[] = []): number => {
+              let x = preferredX;
+              let attempts = 0;
+              while (wouldCrossAnyNodeVertically(x, y1, y2, excludeNodeIds) && attempts < 200) {
+                x = direction === 'left' ? x - COLLISION_STEP : x + COLLISION_STEP;
+                attempts++;
+              }
+              return x;
+            };
+            
+            // Strategy: Route away from interfaces with proper clearance
+            // Apply perpendicular offset to separate overlapping parallel lines
             
             if (fromIfaceSide === 'top' || fromIfaceSide === 'bottom') {
               // Start interface is vertical (top/bottom)
-              const extendY = fromIfaceSide === 'top' ? 
-                startY - totalClearance - lineOffset : startY + totalClearance + lineOffset;
+              // Extend from the edge of interface box with additional clearance
+              let extendY = fromIfaceSide === 'top' ? 
+                startY - clearanceFromInterface : startY + clearanceFromInterface;
+              
+              // Apply offset based on interface connection count to separate lines starting from same interface
+              if (fromIfaceSide === 'top') {
+                extendY -= (fromIfaceConnectionCount * 10);
+              } else {
+                extendY += (fromIfaceConnectionCount * 10);
+              }
               
               if (toIfaceSide === 'top' || toIfaceSide === 'bottom') {
-                // Both interfaces are vertical - route around sides
-                const midX = (startX + endX) / 2 + (lineOffset * (dx > 0 ? 1 : -1));
-                ctx.lineTo(startX, extendY);  // Extend away from node and interface
-                ctx.lineTo(midX, extendY);    // Horizontal to midpoint with offset
+                // Both interfaces are vertical (top/bottom)
                 
-                const targetExtendY = toIfaceSide === 'top' ? 
-                  endY - totalClearance - lineOffset : endY + totalClearance + lineOffset;
-                ctx.lineTo(midX, targetExtendY); // Vertical to target level
-                ctx.lineTo(endX, targetExtendY); // Horizontal to target x
-                ctx.lineTo(endX, endY);          // Connect to interface
+                let targetExtendY = toIfaceSide === 'top' ? 
+                  endY - clearanceFromInterface : endY + clearanceFromInterface;
+                
+                // Apply offset based on target interface connection count
+                if (toIfaceSide === 'top') {
+                  targetExtendY -= (toIfaceConnectionCount * 10);
+                } else {
+                  targetExtendY += (toIfaceConnectionCount * 10);
+                }
+                
+                // LANE-BASED ROUTING for V-to-V connections
+                const excludeNodes = [edge.from, edge.to]; // Don't check collision with source/dest nodes
+                
+                // Step 1: Determine the rough routing corridor
+                // The vertical middle segment prefers to be between the two nodes
+                let preferredMidX = (fromNodePos.x + toNodePos.x) / 2;
+                
+                // Step 2: First pass - collision avoidance with nodes
+                // For horizontal segments, test the FULL X extent they will traverse
+                const fullMinX = Math.min(startX, endX) - 50;
+                const fullMaxX = Math.max(startX, endX) + 50;
+                
+                const extendDirection: 'up' | 'down' = fromIfaceSide === 'top' ? 'up' : 'down';
+                extendY = findSafeHorizontalY(extendY, fullMinX, fullMaxX, extendDirection, excludeNodes);
+                
+                const targetDirection: 'up' | 'down' = toIfaceSide === 'top' ? 'up' : 'down';
+                targetExtendY = findSafeHorizontalY(targetExtendY, fullMinX, fullMaxX, targetDirection, excludeNodes);
+                
+                // For vertical segment, test the FULL Y extent FROM START TO END
+                // This must cover the entire vertical span the line could traverse
+                const fullMinY = Math.min(startY, endY, extendY, targetExtendY) - 50;
+                const fullMaxY = Math.max(startY, endY, extendY, targetExtendY) + 50;
+                const vertDirection: 'left' | 'right' = preferredMidX < Math.min(fromNodePos.x, toNodePos.x) ? 'left' : 'right';
+                let midX = findSafeVerticalX(preferredMidX, fullMinY, fullMaxY, vertDirection, excludeNodes);
+                
+                // Step 3: AFTER collision avoidance, get unique lanes to prevent overlap with OTHER lines
+                // CRITICAL: Search in same direction as collision avoidance to avoid going back into nodes
+                extendY = getAvailableHorizontalY(extendY, extendDirection);
+                targetExtendY = getAvailableHorizontalY(targetExtendY, targetDirection);
+                midX = getAvailableVerticalX(midX, vertDirection);
+                
+                // Route: start -> extend vertically -> horizontal to gutter -> vertical in gutter -> horizontal to target -> down to target
+                ctx.lineTo(startX, extendY);
+                ctx.lineTo(midX, extendY);
+                ctx.lineTo(midX, targetExtendY);
+                ctx.lineTo(endX, targetExtendY);
+                ctx.lineTo(endX, endY);
+                
+                ctx.stroke();
+                
+                const markerSize = 4;
+                ctx.strokeStyle = darkMode ? '#888' : '#999';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                
+                // Draw L-bracket at corner: fromDir is vector pointing BACK to where we came from
+                // toDir is vector pointing FORWARD to where we're going
+                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                  const toDist = Math.abs(toDx) + Math.abs(toDy);
+                  if (fromDist < 5 || toDist < 5) return;
+                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                  if (fromIsHorizontal === toIsHorizontal) return;
+                  
+                  // Arms point in the direction of the vectors (back along from, forward along to)
+                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(x + fromArmX, y + fromArmY);
+                  ctx.lineTo(x, y);
+                  ctx.lineTo(x + toArmX, y + toArmY);
+                  ctx.stroke();
+                };
+                
+                drawCorner(startX, extendY, 0, startY - extendY, midX - startX, 0);
+                drawCorner(midX, extendY, startX - midX, 0, 0, targetExtendY - extendY);
+                drawCorner(midX, targetExtendY, 0, extendY - targetExtendY, endX - midX, 0);
+                drawCorner(endX, targetExtendY, midX - endX, 0, 0, endY - targetExtendY);
+                
+                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 3]);
               } else {
                 // End interface is horizontal (left/right)
-                const adjustedExtendY = extendY + (lineOffset * (dy > 0 ? 1 : -1));
-                ctx.lineTo(startX, adjustedExtendY);  // Extend away from node
-                ctx.lineTo(endX, adjustedExtendY);    // Horizontal to target x
-                ctx.lineTo(endX, endY);       // Connect to interface
+                // Route with right angles only: vertical -> horizontal -> vertical -> horizontal
+                
+                let targetExtendX = toIfaceSide === 'left' ? 
+                  endX - clearanceFromInterface : endX + clearanceFromInterface;
+
+                // Apply offset based on target interface connection count
+                if (toIfaceSide === 'left') {
+                  targetExtendX -= (toIfaceConnectionCount * 10);
+                } else {
+                  targetExtendX += (toIfaceConnectionCount * 10);
+                }
+
+                // LANE-BASED ROUTING for V-to-H connections
+                const excludeNodes = [edge.from, edge.to];
+                
+                // Step 1: Collision avoidance FIRST
+                // Test full extent of horizontal segment - FROM START TO END
+                const fullMinX = Math.min(startX, endX, targetExtendX) - 50;
+                const fullMaxX = Math.max(startX, endX, targetExtendX) + 50;
+                const extendDirection: 'up' | 'down' = fromIfaceSide === 'top' ? 'up' : 'down';
+                extendY = findSafeHorizontalY(extendY, fullMinX, fullMaxX, extendDirection, excludeNodes);
+                
+                // Test full extent of vertical segment - FROM START TO END
+                const fullMinY = Math.min(startY, endY, extendY) - 50;
+                const fullMaxY = Math.max(startY, endY, extendY) + 50;
+                const targetDirection: 'left' | 'right' = toIfaceSide === 'left' ? 'left' : 'right';
+                targetExtendX = findSafeVerticalX(targetExtendX, fullMinY, fullMaxY, targetDirection, excludeNodes);
+
+                // Step 2: Get unique lanes AFTER collision avoidance
+                // CRITICAL: Search in same direction as collision avoidance to avoid going back into nodes
+                extendY = getAvailableHorizontalY(extendY, extendDirection);
+                targetExtendX = getAvailableVerticalX(targetExtendX, targetDirection);
+
+                ctx.lineTo(startX, extendY);         // Vertical: extend away from start interface
+                ctx.lineTo(targetExtendX, extendY);  // Horizontal: to target clearance x
+                ctx.lineTo(targetExtendX, endY);     // Vertical: to target y
+                ctx.lineTo(endX, endY);              // Horizontal: to interface edge
+                
+                ctx.stroke();
+                
+                // Draw L-bracket corner markers only at actual 90-degree turns
+                const markerSize = 4;
+                ctx.strokeStyle = darkMode ? '#888' : '#999';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                
+                // Draw L-bracket at corner
+                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                  const toDist = Math.abs(toDx) + Math.abs(toDy);
+                  if (fromDist < 5 || toDist < 5) return;
+                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                  if (fromIsHorizontal === toIsHorizontal) return;
+                  
+                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(x + fromArmX, y + fromArmY);
+                  ctx.lineTo(x, y);
+                  ctx.lineTo(x + toArmX, y + toArmY);
+                  ctx.stroke();
+                };
+                
+                // Corner 1: (startX, extendY) - vertical to horizontal
+                drawCorner(startX, extendY, 0, startY - extendY, targetExtendX - startX, 0);
+                // Corner 2: (targetExtendX, extendY) - horizontal to vertical
+                drawCorner(targetExtendX, extendY, startX - targetExtendX, 0, 0, endY - extendY);
+                // Corner 3: (targetExtendX, endY) - vertical to horizontal
+                drawCorner(targetExtendX, endY, 0, extendY - endY, endX - targetExtendX, 0);
+                
+                // Reset styles for next connection
+                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 3]);
               }
             } else {
               // Start interface is horizontal (left/right)
-              const extendX = fromIfaceSide === 'left' ? 
-                startX - totalClearance - lineOffset : startX + totalClearance + lineOffset;
+              // Extend from the edge of interface box with additional clearance
+              let extendX = fromIfaceSide === 'left' ? 
+                startX - clearanceFromInterface : startX + clearanceFromInterface;
+              
+              // Apply offset based on interface connection count
+              if (fromIfaceSide === 'left') {
+                extendX -= (fromIfaceConnectionCount * 10);
+              } else {
+                extendX += (fromIfaceConnectionCount * 10);
+              }
               
               if (toIfaceSide === 'left' || toIfaceSide === 'right') {
-                // Both interfaces are horizontal - route around top/bottom
-                const midY = (startY + endY) / 2 + (lineOffset * (dy > 0 ? 1 : -1));
-                ctx.lineTo(extendX, startY);  // Extend away from node and interface
-                ctx.lineTo(extendX, midY);    // Vertical to midpoint with offset
+                // Both interfaces are horizontal (left/right)
                 
-                const targetExtendX = toIfaceSide === 'left' ? 
-                  endX - totalClearance - lineOffset : endX + totalClearance + lineOffset;
-                ctx.lineTo(targetExtendX, midY); // Horizontal to target level
-                ctx.lineTo(targetExtendX, endY); // Vertical to target y
-                ctx.lineTo(endX, endY);          // Connect to interface
+                let targetExtendX = toIfaceSide === 'left' ? 
+                  endX - clearanceFromInterface : endX + clearanceFromInterface;
+                
+                // Apply offset based on target interface connection count
+                if (toIfaceSide === 'left') {
+                  targetExtendX -= (toIfaceConnectionCount * 10);
+                } else {
+                  targetExtendX += (toIfaceConnectionCount * 10);
+                }
+                
+                // LANE-BASED ROUTING for H-to-H connections
+                const excludeNodes = [edge.from, edge.to]; // Don't check collision with source/dest nodes
+                
+                // Step 1: Determine the rough routing corridor
+                let preferredMidY = (fromNodePos.y + toNodePos.y) / 2;
+                
+                // Step 2: First pass - collision avoidance with nodes
+                // For vertical segments, test the FULL Y extent FROM START TO END
+                const fullMinY = Math.min(startY, endY) - 50;
+                const fullMaxY = Math.max(startY, endY) + 50;
+                
+                const extendDirection: 'left' | 'right' = fromIfaceSide === 'left' ? 'left' : 'right';
+                extendX = findSafeVerticalX(extendX, fullMinY, fullMaxY, extendDirection, excludeNodes);
+                
+                const targetDirection: 'left' | 'right' = toIfaceSide === 'left' ? 'left' : 'right';
+                targetExtendX = findSafeVerticalX(targetExtendX, fullMinY, fullMaxY, targetDirection, excludeNodes);
+                
+                // For horizontal segment, test the FULL X extent FROM START TO END
+                const fullMinX = Math.min(startX, endX, extendX, targetExtendX) - 50;
+                const fullMaxX = Math.max(startX, endX, extendX, targetExtendX) + 50;
+                const horizDirection: 'up' | 'down' = preferredMidY < Math.min(fromNodePos.y, toNodePos.y) ? 'up' : 'down';
+                let midY = findSafeHorizontalY(preferredMidY, fullMinX, fullMaxX, horizDirection, excludeNodes);
+                
+                // Step 3: AFTER collision avoidance, get unique lanes to prevent overlap with OTHER lines
+                // CRITICAL: Search in same direction as collision avoidance to avoid going back into nodes
+                extendX = getAvailableVerticalX(extendX, extendDirection);
+                targetExtendX = getAvailableVerticalX(targetExtendX, targetDirection);
+                midY = getAvailableHorizontalY(midY, horizDirection);
+                
+                // Route: start -> extend horizontally -> vertical to gutter -> horizontal in gutter -> vertical to target -> right to target
+                ctx.lineTo(extendX, startY);
+                ctx.lineTo(extendX, midY);
+                ctx.lineTo(targetExtendX, midY);
+                ctx.lineTo(targetExtendX, endY);
+                ctx.lineTo(endX, endY);
+                
+                ctx.stroke();
+                
+                const markerSize = 4;
+                ctx.strokeStyle = darkMode ? '#888' : '#999';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                
+                // Draw L-bracket at corner
+                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                  const toDist = Math.abs(toDx) + Math.abs(toDy);
+                  if (fromDist < 5 || toDist < 5) return;
+                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                  if (fromIsHorizontal === toIsHorizontal) return;
+                  
+                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(x + fromArmX, y + fromArmY);
+                  ctx.lineTo(x, y);
+                  ctx.lineTo(x + toArmX, y + toArmY);
+                  ctx.stroke();
+                };
+                
+                drawCorner(extendX, startY, startX - extendX, 0, 0, midY - startY);
+                drawCorner(extendX, midY, 0, startY - midY, targetExtendX - extendX, 0);
+                drawCorner(targetExtendX, midY, extendX - targetExtendX, 0, 0, endY - midY);
+                drawCorner(targetExtendX, endY, 0, midY - endY, endX - targetExtendX, 0);
+                
+                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 3]);
               } else {
                 // End interface is vertical (top/bottom)
-                const adjustedExtendX = extendX + (lineOffset * (dx > 0 ? 1 : -1));
-                ctx.lineTo(adjustedExtendX, startY);  // Extend away from node
-                ctx.lineTo(adjustedExtendX, endY);    // Vertical to target y
-                ctx.lineTo(endX, endY);       // Connect to interface
+                // Route with right angles only: horizontal -> vertical -> horizontal -> vertical
+                
+                let targetExtendY = toIfaceSide === 'top' ? 
+                  endY - clearanceFromInterface : endY + clearanceFromInterface;
+
+                // Apply offset based on target interface connection count
+                if (toIfaceSide === 'top') {
+                  targetExtendY -= (toIfaceConnectionCount * 10);
+                } else {
+                  targetExtendY += (toIfaceConnectionCount * 10);
+                }
+
+                // LANE-BASED ROUTING for H-to-V connections
+                const excludeNodes = [edge.from, edge.to];
+                
+                // Step 1: Collision avoidance FIRST
+                // Test full extent of vertical segment - FROM START TO END
+                const fullMinY = Math.min(startY, endY, targetExtendY) - 50;
+                const fullMaxY = Math.max(startY, endY, targetExtendY) + 50;
+                const extendDirection: 'left' | 'right' = fromIfaceSide === 'left' ? 'left' : 'right';
+                extendX = findSafeVerticalX(extendX, fullMinY, fullMaxY, extendDirection, excludeNodes);
+                
+                // Test full extent of horizontal segment - FROM START TO END
+                const fullMinX = Math.min(startX, endX, extendX) - 50;
+                const fullMaxX = Math.max(startX, endX, extendX) + 50;
+                const targetDirection: 'up' | 'down' = toIfaceSide === 'top' ? 'up' : 'down';
+                targetExtendY = findSafeHorizontalY(targetExtendY, fullMinX, fullMaxX, targetDirection, excludeNodes);
+
+                // Step 2: Get unique lanes AFTER collision avoidance
+                // CRITICAL: Search in same direction as collision avoidance to avoid going back into nodes
+                extendX = getAvailableVerticalX(extendX, extendDirection);
+                targetExtendY = getAvailableHorizontalY(targetExtendY, targetDirection);
+
+                ctx.lineTo(extendX, startY);         // Horizontal: extend away from start interface
+                ctx.lineTo(extendX, targetExtendY);  // Vertical: to target clearance y
+                ctx.lineTo(endX, targetExtendY);     // Horizontal: to target x
+                ctx.lineTo(endX, endY);              // Vertical: to interface edge
+                
+                ctx.stroke();
+                
+                // Draw L-bracket corner markers only at actual 90-degree turns
+                const markerSize = 4;
+                ctx.strokeStyle = darkMode ? '#888' : '#999';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                
+                // Draw L-bracket at corner
+                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                  const toDist = Math.abs(toDx) + Math.abs(toDy);
+                  if (fromDist < 5 || toDist < 5) return;
+                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                  if (fromIsHorizontal === toIsHorizontal) return;
+                  
+                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(x + fromArmX, y + fromArmY);
+                  ctx.lineTo(x, y);
+                  ctx.lineTo(x + toArmX, y + toArmY);
+                  ctx.stroke();
+                };
+                
+                // Corner 1: (extendX, startY) - horizontal to vertical turn
+                drawCorner(extendX, startY, startX - extendX, 0, 0, targetExtendY - startY);
+                // Corner 2: (extendX, targetExtendY) - vertical to horizontal turn
+                drawCorner(extendX, targetExtendY, 0, startY - targetExtendY, endX - extendX, 0);
+                // Corner 3: (endX, targetExtendY) - horizontal to vertical turn
+                drawCorner(endX, targetExtendY, extendX - endX, 0, 0, endY - targetExtendY);
+                
+                // Reset styles for next connection
+                ctx.strokeStyle = darkMode ? '#666' : '#bbb';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 3]);
               }
             }
             
-            ctx.stroke();
             ctx.setLineDash([]); // Reset line dash
             ctx.restore;
           }

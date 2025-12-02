@@ -5,11 +5,31 @@ import BackendNetworkExample from "@/components/BackendNetworkExample"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import DarkModeToggle from "@/components/DarkModeToggle"
 import NodeDetailsPanel from "@/components/NodeDetailsPanel"
+import InfoPanel from "@/components/InfoPanel"
+
+// Dataset configuration - add new datasets here
+const DATASETS = {
+  "Yoda 12 Node": {
+    dataFile: "/sample-backend-data-12Node.json",
+    positionsFile: "/node-positions-12.json"
+  },
+  "Yoda 28 Node": {
+    dataFile: "/sample-backend-data-28Node.json",
+    positionsFile: "/node-positions-28.json"
+  },
+  "EST4 150 Node": {
+    dataFile: "/sample-backend-data-150Node.json",
+    positionsFile: "/node-positions-150.json"
+  }
+} as const;
+
+type DatasetName = keyof typeof DATASETS;
 
 export default function Page() {
   const [showInfo, setShowInfo] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<any>(null)
+  const [datasetName, setDatasetName] = useState<DatasetName>("EST4 150 Node")
 
   useEffect(() => {
     if (darkMode) {
@@ -44,17 +64,49 @@ export default function Page() {
       </header>
 
       <main className="app-main">
-        {
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', width: '100%' }}>
+          {/* Dataset Selector - Outside the component */}
+          <div style={{ flex: '0 0 auto', paddingTop: '8px' }}>
+            <select
+              value={datasetName}
+              onChange={(e) => setDatasetName(e.target.value as DatasetName)}
+              style={{
+                padding: '8px 32px 8px 12px',
+                borderRadius: 6,
+                border: `1px solid ${darkMode ? '#475569' : '#ccc'}`,
+                backgroundColor: darkMode ? '#1e293b' : '#fff',
+                color: darkMode ? '#e2e8f0' : '#000',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '160px',
+                appearance: 'none' as const,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${darkMode ? '%23e2e8f0' : '%23666'}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 10px center'
+              }}
+            >
+              {Object.keys(DATASETS).map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Network Map Component */}
           <ErrorBoundary>
-            <div style={{ width: "100%", minHeight: "400px" }}>
+            <div style={{ flex: '1 1 auto', minHeight: "400px" }}>
               <BackendNetworkExample 
                 darkMode={darkMode} 
+                dataFile={DATASETS[datasetName].dataFile}
+                positionsFile={DATASETS[datasetName].positionsFile}
                 onNodeClick={(nodeData: any) => setSelectedNodeDetails(nodeData)}
               />
             </div>
           </ErrorBoundary>
-        }
+        </div>
 
+        {/* Side panels */}
         {selectedNodeDetails && (
           <NodeDetailsPanel 
             nodeData={selectedNodeDetails} 
@@ -64,37 +116,7 @@ export default function Page() {
         )}
 
         {showInfo && (
-          <div className="info-panel">
-            <h3>Network Topology Information</h3>
-            <div className="info-grid">
-              <div>
-                <h4>Data Source</h4>
-                <ul>
-                  <li>C++ Backend Processor</li>
-                  <li>IPv6 Multicast Routing Tables</li>
-                  <li>Neighbor Discovery Information</li>
-                  <li>Interface Configuration Data</li>
-                </ul>
-              </div>
-              <div>
-                <h4>Network Details</h4>
-                <ul>
-                  <li>Multicast Group: ff1e::112</li>
-                  <li>40+ Nodes with Routing Paths</li>
-                  <li>upto 4 Direct Neighbor Connections</li>
-                </ul>
-              </div>
-              <div>
-                <h4>Visualization Features</h4>
-                <ul>
-                  <li>Static Network Layout</li>
-                  <li>Hover for Node Statistics</li>
-                  <li>Color-coded Node Types</li>
-                  <li>Interface-specific Connections</li>
-                </ul>
-              </div>
-            </div>
-          </div>
+          <InfoPanel darkMode={darkMode} onClose={() => setShowInfo(false)} />
         )}
       </main>
 
