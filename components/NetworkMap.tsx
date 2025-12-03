@@ -279,12 +279,12 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       const totalNodes = nodes.length;
       
       // Adaptive spacing based on node count
-      let horizontalSpacing = 350;
+      let horizontalSpacing = 250;
       let verticalSpacing = 250;
       
       if (totalNodes > 100) {
         horizontalSpacing = 300;
-        verticalSpacing = 180;
+        verticalSpacing = 250;
       } else if (totalNodes > 50) {
         horizontalSpacing = 250;
         verticalSpacing = 200;
