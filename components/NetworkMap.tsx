@@ -279,11 +279,11 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       const totalNodes = nodes.length;
       
       // Adaptive spacing based on node count
-      let horizontalSpacing = 300;
+      let horizontalSpacing = 350;
       let verticalSpacing = 250;
       
       if (totalNodes > 100) {
-        horizontalSpacing = 200;
+        horizontalSpacing = 300;
         verticalSpacing = 180;
       } else if (totalNodes > 50) {
         horizontalSpacing = 250;
@@ -736,9 +736,9 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             // Define exclusion zones for nodes - MUCH larger to account for:
             // - Node box itself (~25px)
             // - Interface boxes around it (up to 55px away + 12px half-width)
-            // - Extra padding to ensure lines don't get too close
-            const nodeExclusionHalfSizeX = horizontalDistance + interfaceBoxWidth / 2 + 25; // ~92px for left/right
-            const nodeExclusionHalfSizeY = verticalDistance + interfaceBoxHeight / 2 + 25; // ~64px for top/bottom
+            // - Extra padding to ensure lines don't get too close to interface labels
+            const nodeExclusionHalfSizeX = horizontalDistance + interfaceBoxWidth / 2 + 35; // ~102px for left/right
+            const nodeExclusionHalfSizeY = verticalDistance + interfaceBoxHeight / 2 + 35; // ~74px for top/bottom
             
             // Get all node positions for collision checking
             const allNodePositions = Object.entries(positions).map(([id, pos]: [string, any]) => ({
@@ -1010,6 +1010,22 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 
                 // Step 1: Determine the rough routing corridor
                 let preferredMidY = (fromNodePos.y + toNodePos.y) / 2;
+                
+                // CRITICAL: For same-side connections (both left or both right),
+                // the horizontal segment must go OUTSIDE the nodes, not between them
+                if (fromIfaceSide === toIfaceSide) {
+                  // Both on same side - route above or below all nodes in the path
+                  const minNodeY = Math.min(fromNodePos.y, toNodePos.y);
+                  const maxNodeY = Math.max(fromNodePos.y, toNodePos.y);
+                  // Choose to go above (smaller Y) or below (larger Y) based on which is closer
+                  const distToTop = Math.abs(preferredMidY - (minNodeY - 150));
+                  const distToBottom = Math.abs(preferredMidY - (maxNodeY + 150));
+                  if (distToTop <= distToBottom) {
+                    preferredMidY = minNodeY - 100; // Route above
+                  } else {
+                    preferredMidY = maxNodeY + 100; // Route below
+                  }
+                }
                 
                 // Step 2: First pass - collision avoidance with nodes
                 // For vertical segments, test the FULL Y extent FROM START TO END
