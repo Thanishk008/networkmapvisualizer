@@ -6,24 +6,7 @@ import ErrorBoundary from "@/components/ErrorBoundary"
 import DarkModeToggle from "@/components/DarkModeToggle"
 import NodeDetailsPanel from "@/components/NodeDetailsPanel"
 import InfoPanel from "@/components/InfoPanel"
-
-// Dataset configuration - add new datasets here
-const DATASETS = {
-  "Yoda 12 Node": {
-    dataFile: "/data-12Node.json",
-    positionsFile: "/query-12Node.json"
-  },
-  "Yoda 28 Node": {
-    dataFile: "/data-28Node.json",
-    positionsFile: "/query-28Node.json"
-  },
-  "EST4 150 Node": {
-    dataFile: "/data-150Node.json",
-    positionsFile: "/query-150Node.json"
-  }
-} as const;
-
-type DatasetName = keyof typeof DATASETS;
+import { DATASETS, DatasetName } from "@/config/datasets"
 
 export default function Page() {
   const [showInfo, setShowInfo] = useState(false)
