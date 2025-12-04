@@ -2,6 +2,75 @@ import { DataSet } from "vis-data"
 
 export class NetworkDataAdapter {
   /**
+   * Find ALL paths between source and target node IDs.
+   * This method returns all direct connections (for multicast scenarios where there may be
+   * multiple physical links between two nodes via different interfaces).
+   * Returns { pathEdges: string[], pathNodes: string[] } with ALL matching edges.
+   */
+  static findAllPaths(nodes: any[], edges: any[], sourceId: string, targetId: string, backendJson?: any) {
+    if (!sourceId || !targetId) throw new Error("Source and target must be provided")
+    if (sourceId === targetId) return { pathEdges: [], pathNodes: [sourceId] }
+    
+    const nodeIds = new Set(nodes.map(n => n.id))
+    if (!nodeIds.has(sourceId)) throw new Error(`Source node '${sourceId}' not found`)
+    if (!nodeIds.has(targetId)) throw new Error(`Target node '${targetId}' not found`)
+
+    // Debug: log all edges that involve either source or target
+    console.log(`[findAllPaths] Searching for paths between '${sourceId}' and '${targetId}'`)
+    const relatedEdges = edges.filter(e => 
+      e.from === sourceId || e.to === sourceId || 
+      e.from === targetId || e.to === targetId
+    )
+    console.log(`[findAllPaths] Edges involving source or target:`, relatedEdges.map(e => ({
+      id: e.id, from: e.from, to: e.to, ifaceA: e.interfaceA, ifaceB: e.interfaceB
+    })))
+
+    // Find all direct edges between source and target (multicast support)
+    const directEdges = this.findAllEdgesBetween(edges, sourceId, targetId)
+    
+    if (directEdges.length > 0) {
+      // Direct neighbors with one or more connections
+      console.log(`[findAllPaths] Found ${directEdges.length} direct paths between ${sourceId} and ${targetId}:`, directEdges)
+      return { pathEdges: directEdges, pathNodes: [sourceId, targetId] }
+    }
+
+    // Not direct neighbors - try route-based pathfinding for single path
+    // For multi-hop paths, we currently only find one path
+    // (multi-hop multicast routing would require more complex analysis)
+    if (backendJson && (backendJson.network_map || backendJson.networkMap)) {
+      try {
+        return this.findPathUsingRouteInfo(sourceId, targetId, backendJson, edges)
+      } catch (err) {
+        console.warn('Route-based pathfinding failed, falling back to BFS:', err)
+      }
+    }
+
+    // Fallback to BFS
+    return this.findPathBFS(sourceId, targetId, edges, true)
+  }
+
+  /**
+   * Helper to find ALL edges between two nodes (for multicast with multiple physical links)
+   */
+  private static findAllEdgesBetween(edges: any[], nodeA: string, nodeB: string): string[] {
+    const result: string[] = []
+    console.log(`[findAllEdgesBetween] Looking for edges between '${nodeA}' and '${nodeB}'`)
+    console.log(`[findAllEdgesBetween] Total edges to check: ${edges.length}`)
+    
+    for (const edge of edges) {
+      if (edge.hidden || edge.redundant) continue // Skip hidden/redundant edges
+      if ((edge.from === nodeA && edge.to === nodeB) || 
+          (edge.from === nodeB && edge.to === nodeA)) {
+        console.log(`[findAllEdgesBetween] Found edge: ${edge.id} (${edge.from} -> ${edge.to}, interfaceA: ${edge.interfaceA}, interfaceB: ${edge.interfaceB})`)
+        result.push(edge.id)
+      }
+    }
+    
+    console.log(`[findAllEdgesBetween] Total matching edges: ${result.length}`)
+    return result
+  }
+
+  /**
    * Find path between source and target node IDs using the route_info table.
    * This method traces the path by following route entries from each intermediate
    * node toward the target, using the actual routing information from the backend JSON.

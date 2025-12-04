@@ -457,7 +457,9 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
     })
     
     try {
-      const { pathEdges, pathNodes } = NetworkDataAdapter.findPath(physData.nodes, physData.edges, selectedSource, selectedTarget, rawBackendData)
+      // Use findAllPaths to get ALL paths (for multicast with multiple direct connections)
+      const { pathEdges, pathNodes } = NetworkDataAdapter.findAllPaths(physData.nodes, physData.edges, selectedSource, selectedTarget, rawBackendData)
+      
       const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
       const highlightNodeStyle = { color: { background: highlightColor, border: highlightColor }, borderWidth: 4 }
       
@@ -487,7 +489,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
       // Just pass the data through, the highlighting is handled in NetworkMap
       setNetworkData(NetworkDataAdapter.convertToVisNetwork({ nodes, edges: physData.edges }))
       
-      // Store path info for custom canvas drawing
+      // Store path info for custom canvas drawing (includes ALL path edges for multicast)
       const hasPath = (pathNodes || []).length > 1
       setHighlightedPathInfo(hasPath ? { nodes: pathNodes, edges: pathEdges } : null)
       setPathHighlighted(hasPath)
