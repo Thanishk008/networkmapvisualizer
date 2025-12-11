@@ -15,3 +15,24 @@ export const DATASETS = {
 } as const;
 
 export type DatasetName = keyof typeof DATASETS;
+
+
+/*
+// Dataset configuration - add new datasets here
+export const DATASETS = {
+  "Yoda 12 Node": {
+    dataFile: "/new_12_data.json",
+    positionsFile: "/query_new_12node.json"
+  },
+  "Yoda 28 Node": {
+    dataFile: "/new_28_data.json",
+    positionsFile: "/query_new_28node.json"
+  },
+  "EST4 150 Node": {
+    dataFile: "/new_150_data.json",
+    positionsFile: "/query_new_150node.json"
+  }
+} as const;
+
+export type DatasetName = keyof typeof DATASETS;
+*/

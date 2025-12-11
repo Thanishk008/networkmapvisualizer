@@ -400,7 +400,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
     setMousePosition({ x: event.clientX + 10, y: event.clientY + 10 })
   }, [])
 
-  const handleRefreshData = async () => {
+  const handleRefreshData = useCallback(async () => {
     setLoading(true)
     // Reset path-related state on refresh
     setSelectedSource('')
@@ -426,7 +426,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
     } finally {
       setLoading(false)
     }
-  }
+  }, [dataFile])
 
   // Build source list from all physical nodes (so every visible node is selectable as a source)
   const physForList = rawBackendData ? NetworkDataAdapter.convertPhysicalOnly(rawBackendData) : { nodes: [], edges: [] }
@@ -519,11 +519,11 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
   // Listen for a global refresh event so header can host the refresh button
   useEffect(() => {
     const onRefresh = () => {
-      if (typeof handleRefreshData === 'function') handleRefreshData()
+      handleRefreshData()
     }
     window.addEventListener('network-refresh', onRefresh)
     return () => window.removeEventListener('network-refresh', onRefresh)
-  }, [])
+  }, [handleRefreshData])
 
   if (loading) {
     return <div className="loading-container">Loading network topology...</div>
