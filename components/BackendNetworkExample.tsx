@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import NetworkMap from "./NetworkMap"
 import StatisticsDisplay from "./StatisticsDisplay"
 import SearchableSelect from "./SearchableSelect"
@@ -76,7 +76,7 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
       }
     }
     loadBackendData()
-  }, [darkMode, dataFile])
+  }, [dataFile])  // Only reload data when dataFile changes, not on dark mode toggle
 
   // Helper: compute connected interfaces for a given node by scanning physical nodes/edges
   const computeConnectedInterfaces = useCallback((nodeId: string) => {
@@ -460,8 +460,14 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
       // Use findAllPaths to get ALL paths (for multicast with multiple direct connections)
       const { pathEdges, pathNodes } = NetworkDataAdapter.findAllPaths(physData.nodes, physData.edges, selectedSource, selectedTarget, rawBackendData)
       
-      const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || (darkMode ? "#FFD166" : "#FF6B6B")
-      const highlightNodeStyle = { color: { background: highlightColor, border: highlightColor }, borderWidth: 4 }
+      // Use darkMode prop directly for colors - CSS variables may not have updated yet when dark mode toggles
+      const highlightColor = darkMode ? "#FFD166" : "#FF6B6B"
+      // Explicitly include font color to ensure label visibility on highlighted nodes
+      const highlightNodeStyle = { 
+        color: { background: highlightColor, border: highlightColor }, 
+        borderWidth: 4,
+        font: { color: '#ffffff' }  // Ensure white text on highlight
+      }
       
       // Dim non-highlighted nodes but NOT intermediate path nodes
       // Source and target get highlight style, intermediate path nodes stay normal, others get dimmed
@@ -503,18 +509,17 @@ export default function BackendNetworkExample({ darkMode, dataFile, positionsFil
     }
   }, [rawBackendData, selectedSource, selectedTarget, darkMode])
 
-  // When raw data or theme changes, reapply path highlighting if it was previously shown
+  // When darkMode changes and path is highlighted, recompute to update colors
+  const prevDarkModeRef = useRef(darkMode)
   useEffect(() => {
-    if (!rawBackendData) return
-    // Only re-highlight if the path was explicitly shown (pathHighlighted is true)
-    if (pathHighlighted && selectedSource && selectedTarget) {
-      computeAndHighlightPath()
-    } else {
-      // Otherwise, reset to physical topology without highlighting
-      const physData = NetworkDataAdapter.convertPhysicalOnly(rawBackendData)
-      setNetworkData(NetworkDataAdapter.convertToVisNetwork(physData))
+    if (prevDarkModeRef.current !== darkMode) {
+      prevDarkModeRef.current = darkMode
+      // If path was highlighted, recompute with new colors
+      if (pathHighlighted && selectedSource && selectedTarget && rawBackendData) {
+        computeAndHighlightPath()
+      }
     }
-  }, [rawBackendData, darkMode])
+  }, [darkMode, pathHighlighted, selectedSource, selectedTarget, rawBackendData, computeAndHighlightPath])
 
   // Listen for a global refresh event so header can host the refresh button
   useEffect(() => {

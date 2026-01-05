@@ -122,16 +122,70 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
   const nodePositionDataRef = useRef<any>(null)
   const [clickHighlightedNode, setClickHighlightedNode] = useState<string | null>(null) // For click-to-highlight feature
   
+  // Animation state for the light trail effect
+  const animationRef = useRef<number | null>(null)
+  const animationProgressRef = useRef<number>(0) // 0 to 1 representing position along path
+  
+  // Use ref for darkMode to avoid network recreation on theme change
+  const darkModeRef = useRef(darkMode)
+  
   // Use refs for callbacks to avoid dependency array issues
   const onNodeHoverRef = useRef(onNodeHover)
   const onNodeClickRef = useRef(onNodeClick)
   const onNodeBlurRef = useRef(onNodeBlur)
   
+  // Keep refs updated
   useEffect(() => {
     onNodeHoverRef.current = onNodeHover
     onNodeClickRef.current = onNodeClick
     onNodeBlurRef.current = onNodeBlur
+    darkModeRef.current = darkMode
   })
+
+  // Animation loop for the light trail effect on highlighted path
+  useEffect(() => {
+    if (!highlightedPath || !highlightedPath.edges || highlightedPath.edges.length === 0) {
+      // No highlighted path, stop animation
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+        animationRef.current = null
+      }
+      animationProgressRef.current = 0
+      return
+    }
+
+    // Animation parameters - duration scales with path length (number of edges)
+    // Base duration of 2000ms for first edge, plus 1500ms per additional edge
+    const numEdges = highlightedPath.edges.length
+    const BASE_DURATION = 2000 // Base time for single edge
+    const PER_EDGE_DURATION = 1500 // Additional time per edge
+    const ANIMATION_DURATION = BASE_DURATION + (numEdges - 1) * PER_EDGE_DURATION
+    let startTime: number | null = null
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp
+      const elapsed = timestamp - startTime
+      
+      // Progress from 0 to 1, then loop
+      animationProgressRef.current = (elapsed % ANIMATION_DURATION) / ANIMATION_DURATION
+      
+      // Trigger a redraw of the network to show the animation
+      if (networkRef.current) {
+        networkRef.current.redraw()
+      }
+      
+      animationRef.current = requestAnimationFrame(animate)
+    }
+
+    animationRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+        animationRef.current = null
+      }
+    }
+  }, [highlightedPath])
 
   // Load node position data when positionsFile changes
   useEffect(() => {
@@ -202,7 +256,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       // Prepare networkData for vis-network, enforce single highlight color for selected node
       let visData = networkData;
       if (networkData && networkData.nodes && selectedNode) {
-        const highlightColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim();
+        // Use darkMode directly - CSS variables may not have updated yet
+        const highlightColor = darkModeRef.current ? '#FFD166' : '#FF6B6B';
         visData = {
           ...networkData,
           nodes: networkData.nodes.map((n: any) => n.id === selectedNode.id ? {
@@ -220,7 +275,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         };
       }
       // Explicitly disable arrows in the vis-network instance
-      const options = getNetworkOptions(darkMode);
+      // Use darkModeRef.current to ensure we have the latest value
+      const options = getNetworkOptions(darkModeRef.current);
       options.edges.arrows = { to: { enabled: false } }; // Corrected type
 
       // Process edges - add interface labels positioned along the edge
@@ -418,8 +474,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             ctx.save();
             
             // Draw interface box (attached to node edge)
-            ctx.fillStyle = darkMode ? '#2c3e50' : '#e8f4f8';
-            ctx.strokeStyle = darkMode ? '#34495e' : '#4ECDC4';
+            ctx.fillStyle = darkModeRef.current ? '#2c3e50' : '#e8f4f8';
+            ctx.strokeStyle = darkModeRef.current ? '#34495e' : '#4ECDC4';
             ctx.lineWidth = 2;
             
             const boxX = labelX - interfaceBoxWidth / 2;
@@ -435,7 +491,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             ctx.font = 'bold 10px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = darkMode ? '#ecf0f1' : '#2c3e50';
+            ctx.fillStyle = darkModeRef.current ? '#ecf0f1' : '#2c3e50';
             ctx.fillText(displayName, labelX, labelY);
             
             ctx.restore();
@@ -519,8 +575,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
           // Evenly distribute hues across the color wheel
           const hue = (index * 360 / Math.max(totalEdges, 1)) % 360;
           // Muted: low saturation, medium lightness for dark mode, slightly different for light
-          const saturation = darkMode ? 45 : 50;
-          const lightness = darkMode ? 50 : 45;
+          const saturation = darkModeRef.current ? 45 : 50;
+          const lightness = darkModeRef.current ? 50 : 45;
           return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         };
         
@@ -557,6 +613,10 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         // Deduplicate edges to avoid drawing the same connection multiple times
         const drawnConnections = new Set<string>();
         const interfaceConnectionCount = new Map<string, number>(); // Track connections per interface
+        
+        // Storage for highlighted path segments for animation
+        // Map edge ID -> route points, so we can retrieve them in path order later
+        const highlightedEdgeRoutesMap = new Map<string, {x: number, y: number}[]>();
         
         edges.forEach((edge: any) => {
           if (edge.edgeType === 'direct') {
@@ -610,7 +670,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             
             // Determine edge styling based on highlight state
             const edgeKey = `${edge.from}-${edge.to}-${edge.interfaceA}-${edge.interfaceB}`;
-            const baseEdgeColor = edgeColorMap.get(edgeKey) || (darkMode ? '#666' : '#bbb');
+            const baseEdgeColor = edgeColorMap.get(edgeKey) || (darkModeRef.current ? '#666' : '#bbb');
             
             // Check if this edge is part of the highlighted path (source-target selection)
             const isPathHighlighted = highlightedPath && highlightedPath.edges && highlightedPath.edges.includes(edge.id);
@@ -627,7 +687,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             
             if (isPathHighlighted) {
               // Source-target path: bright, thick, fully visible
-              edgeColor = getComputedStyle(document.documentElement).getPropertyValue('--color-legend-highlight').trim() || '#FFD166';
+              // Use darkModeRef directly - CSS variables may not have updated yet
+              edgeColor = darkModeRef.current ? '#FFD166' : '#FF6B6B';
               edgeWidth = 3;
               edgeOpacity = 1;
             } else if (isClickHighlighted) {
@@ -637,7 +698,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
               edgeOpacity = 1;
             } else if (shouldDim) {
               // Not highlighted, in highlight mode: very dim
-              edgeColor = darkMode ? '#444' : '#ddd';
+              edgeColor = darkModeRef.current ? '#444' : '#ddd';
               edgeWidth = 1;
               edgeOpacity = 0.3;
             } else {
@@ -868,41 +929,57 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 ctx.lineTo(endX, endY);
                 
                 ctx.stroke();
+                
+                // Store route for light trail animation if this is a highlighted path edge
+                if (isPathHighlighted) {
+                  highlightedEdgeRoutesMap.set(edge.id, [
+                    {x: startX, y: startY},
+                    {x: startX, y: extendY},
+                    {x: midX, y: extendY},
+                    {x: midX, y: targetExtendY},
+                    {x: endX, y: targetExtendY},
+                    {x: endX, y: endY}
+                  ]);
+                }
+                
                 ctx.globalAlpha = 1; // Reset alpha for markers
                 
-                const markerSize = 4;
-                // Use edge color for corner markers, slightly brighter
-                ctx.strokeStyle = isPathHighlighted ? edgeColor : (isClickHighlighted ? edgeColor : (shouldDim ? (darkMode ? '#555' : '#ccc') : edgeColor));
-                ctx.lineWidth = isPathHighlighted ? 2.5 : 2;
-                ctx.setLineDash([]);
-                
-                // Draw L-bracket at corner: fromDir is vector pointing BACK to where we came from
-                // toDir is vector pointing FORWARD to where we're going
-                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
-                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
-                  const toDist = Math.abs(toDx) + Math.abs(toDy);
-                  if (fromDist < 5 || toDist < 5) return;
-                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
-                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
-                  if (fromIsHorizontal === toIsHorizontal) return;
+                // Skip corner markers for highlighted path - the light trail animation provides visual feedback
+                if (!isPathHighlighted) {
+                  const markerSize = 4;
+                  // Use edge color for corner markers, slightly brighter
+                  ctx.strokeStyle = isClickHighlighted ? edgeColor : (shouldDim ? (darkModeRef.current ? '#555' : '#ccc') : edgeColor);
+                  ctx.lineWidth = 2;
+                  ctx.setLineDash([]);
                   
-                  // Arms point in the direction of the vectors (back along from, forward along to)
-                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
-                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
-                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
-                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  // Draw L-bracket at corner: fromDir is vector pointing BACK to where we came from
+                  // toDir is vector pointing FORWARD to where we're going
+                  const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                    const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                    const toDist = Math.abs(toDx) + Math.abs(toDy);
+                    if (fromDist < 5 || toDist < 5) return;
+                    const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                    const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                    if (fromIsHorizontal === toIsHorizontal) return;
+                    
+                    // Arms point in the direction of the vectors (back along from, forward along to)
+                    const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                    const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                    const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                    const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x + fromArmX, y + fromArmY);
+                    ctx.lineTo(x, y);
+                    ctx.lineTo(x + toArmX, y + toArmY);
+                    ctx.stroke();
+                  };
                   
-                  ctx.beginPath();
-                  ctx.moveTo(x + fromArmX, y + fromArmY);
-                  ctx.lineTo(x, y);
-                  ctx.lineTo(x + toArmX, y + toArmY);
-                  ctx.stroke();
-                };
-                
-                drawCorner(startX, extendY, 0, startY - extendY, midX - startX, 0);
-                drawCorner(midX, extendY, startX - midX, 0, 0, targetExtendY - extendY);
-                drawCorner(midX, targetExtendY, 0, extendY - targetExtendY, endX - midX, 0);
-                drawCorner(endX, targetExtendY, midX - endX, 0, 0, endY - targetExtendY);
+                  drawCorner(startX, extendY, 0, startY - extendY, midX - startX, 0);
+                  drawCorner(midX, extendY, startX - midX, 0, 0, targetExtendY - extendY);
+                  drawCorner(midX, targetExtendY, 0, extendY - targetExtendY, endX - midX, 0);
+                  drawCorner(endX, targetExtendY, midX - endX, 0, 0, endY - targetExtendY);
+                }
               } else {
                 // End interface is horizontal (left/right)
                 // Route with right angles only: vertical -> horizontal -> vertical -> horizontal
@@ -945,39 +1022,53 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 
                 ctx.stroke();
                 
-                // Draw L-bracket corner markers only at actual 90-degree turns
-                const markerSize = 4;
-                ctx.strokeStyle = darkMode ? '#888' : '#999';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([]);
+                // Store route for light trail animation if this is a highlighted path edge
+                if (isPathHighlighted) {
+                  highlightedEdgeRoutesMap.set(edge.id, [
+                    {x: startX, y: startY},
+                    {x: startX, y: extendY},
+                    {x: targetExtendX, y: extendY},
+                    {x: targetExtendX, y: endY},
+                    {x: endX, y: endY}
+                  ]);
+                }
                 
-                // Draw L-bracket at corner
-                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
-                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
-                  const toDist = Math.abs(toDx) + Math.abs(toDy);
-                  if (fromDist < 5 || toDist < 5) return;
-                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
-                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
-                  if (fromIsHorizontal === toIsHorizontal) return;
+                // Skip corner markers for highlighted path - the light trail animation provides visual feedback
+                if (!isPathHighlighted) {
+                  // Draw L-bracket corner markers only at actual 90-degree turns
+                  const markerSize = 4;
+                  ctx.strokeStyle = darkModeRef.current ? '#888' : '#999';
+                  ctx.lineWidth = 2;
+                  ctx.setLineDash([]);
                   
-                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
-                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
-                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
-                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  // Draw L-bracket at corner
+                  const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                    const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                    const toDist = Math.abs(toDx) + Math.abs(toDy);
+                    if (fromDist < 5 || toDist < 5) return;
+                    const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                    const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                    if (fromIsHorizontal === toIsHorizontal) return;
+                    
+                    const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                    const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                    const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                    const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x + fromArmX, y + fromArmY);
+                    ctx.lineTo(x, y);
+                    ctx.lineTo(x + toArmX, y + toArmY);
+                    ctx.stroke();
+                  };
                   
-                  ctx.beginPath();
-                  ctx.moveTo(x + fromArmX, y + fromArmY);
-                  ctx.lineTo(x, y);
-                  ctx.lineTo(x + toArmX, y + toArmY);
-                  ctx.stroke();
-                };
-                
-                // Corner 1: (startX, extendY) - vertical to horizontal
-                drawCorner(startX, extendY, 0, startY - extendY, targetExtendX - startX, 0);
-                // Corner 2: (targetExtendX, extendY) - horizontal to vertical
-                drawCorner(targetExtendX, extendY, startX - targetExtendX, 0, 0, endY - extendY);
-                // Corner 3: (targetExtendX, endY) - vertical to horizontal
-                drawCorner(targetExtendX, endY, 0, extendY - endY, endX - targetExtendX, 0);
+                  // Corner 1: (startX, extendY) - vertical to horizontal
+                  drawCorner(startX, extendY, 0, startY - extendY, targetExtendX - startX, 0);
+                  // Corner 2: (targetExtendX, extendY) - horizontal to vertical
+                  drawCorner(targetExtendX, extendY, startX - targetExtendX, 0, 0, endY - extendY);
+                  // Corner 3: (targetExtendX, endY) - vertical to horizontal
+                  drawCorner(targetExtendX, endY, 0, extendY - endY, endX - targetExtendX, 0);
+                }
               }
             } else {
               // Start interface is horizontal (left/right)
@@ -1058,38 +1149,54 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 ctx.lineTo(endX, endY);
                 
                 ctx.stroke();
+                
+                // Store route for light trail animation if this is a highlighted path edge
+                if (isPathHighlighted) {
+                  highlightedEdgeRoutesMap.set(edge.id, [
+                    {x: startX, y: startY},
+                    {x: extendX, y: startY},
+                    {x: extendX, y: midY},
+                    {x: targetExtendX, y: midY},
+                    {x: targetExtendX, y: endY},
+                    {x: endX, y: endY}
+                  ]);
+                }
+                
                 ctx.globalAlpha = 1; // Reset alpha for markers
                 
-                const markerSize = 4;
-                ctx.strokeStyle = isPathHighlighted ? edgeColor : (isClickHighlighted ? edgeColor : (shouldDim ? (darkMode ? '#555' : '#ccc') : edgeColor));
-                ctx.lineWidth = isPathHighlighted ? 2.5 : 2;
-                ctx.setLineDash([]);
-                
-                // Draw L-bracket at corner
-                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
-                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
-                  const toDist = Math.abs(toDx) + Math.abs(toDy);
-                  if (fromDist < 5 || toDist < 5) return;
-                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
-                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
-                  if (fromIsHorizontal === toIsHorizontal) return;
+                // Skip corner markers for highlighted path - the light trail animation provides visual feedback
+                if (!isPathHighlighted) {
+                  const markerSize = 4;
+                  ctx.strokeStyle = isClickHighlighted ? edgeColor : (shouldDim ? (darkModeRef.current ? '#555' : '#ccc') : edgeColor);
+                  ctx.lineWidth = 2;
+                  ctx.setLineDash([]);
                   
-                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
-                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
-                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
-                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  // Draw L-bracket at corner
+                  const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                    const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                    const toDist = Math.abs(toDx) + Math.abs(toDy);
+                    if (fromDist < 5 || toDist < 5) return;
+                    const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                    const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                    if (fromIsHorizontal === toIsHorizontal) return;
+                    
+                    const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                    const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                    const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                    const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x + fromArmX, y + fromArmY);
+                    ctx.lineTo(x, y);
+                    ctx.lineTo(x + toArmX, y + toArmY);
+                    ctx.stroke();
+                  };
                   
-                  ctx.beginPath();
-                  ctx.moveTo(x + fromArmX, y + fromArmY);
-                  ctx.lineTo(x, y);
-                  ctx.lineTo(x + toArmX, y + toArmY);
-                  ctx.stroke();
-                };
-                
-                drawCorner(extendX, startY, startX - extendX, 0, 0, midY - startY);
-                drawCorner(extendX, midY, 0, startY - midY, targetExtendX - extendX, 0);
-                drawCorner(targetExtendX, midY, extendX - targetExtendX, 0, 0, endY - midY);
-                drawCorner(targetExtendX, endY, 0, midY - endY, endX - targetExtendX, 0);
+                  drawCorner(extendX, startY, startX - extendX, 0, 0, midY - startY);
+                  drawCorner(extendX, midY, 0, startY - midY, targetExtendX - extendX, 0);
+                  drawCorner(targetExtendX, midY, extendX - targetExtendX, 0, 0, endY - midY);
+                  drawCorner(targetExtendX, endY, 0, midY - endY, endX - targetExtendX, 0);
+                }
               } else {
                 // End interface is vertical (top/bottom)
                 // Route with right angles only: horizontal -> vertical -> horizontal -> vertical
@@ -1131,41 +1238,56 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
                 ctx.lineTo(endX, endY);              // Vertical: to interface edge
                 
                 ctx.stroke();
+                
+                // Store route for light trail animation if this is a highlighted path edge
+                if (isPathHighlighted) {
+                  highlightedEdgeRoutesMap.set(edge.id, [
+                    {x: startX, y: startY},
+                    {x: extendX, y: startY},
+                    {x: extendX, y: targetExtendY},
+                    {x: endX, y: targetExtendY},
+                    {x: endX, y: endY}
+                  ]);
+                }
+                
                 ctx.globalAlpha = 1; // Reset alpha for markers
                 
-                // Draw L-bracket corner markers only at actual 90-degree turns
-                const markerSize = 4;
-                ctx.strokeStyle = isPathHighlighted ? edgeColor : (isClickHighlighted ? edgeColor : (shouldDim ? (darkMode ? '#555' : '#ccc') : edgeColor));
-                ctx.lineWidth = isPathHighlighted ? 2.5 : 2;
-                ctx.setLineDash([]);
-                
-                // Draw L-bracket at corner
-                const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
-                  const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
-                  const toDist = Math.abs(toDx) + Math.abs(toDy);
-                  if (fromDist < 5 || toDist < 5) return;
-                  const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
-                  const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
-                  if (fromIsHorizontal === toIsHorizontal) return;
+                // Skip corner markers for highlighted path - the light trail animation provides visual feedback
+                if (!isPathHighlighted) {
+                  // Draw L-bracket corner markers only at actual 90-degree turns
+                  const markerSize = 4;
+                  ctx.strokeStyle = isClickHighlighted ? edgeColor : (shouldDim ? (darkModeRef.current ? '#555' : '#ccc') : edgeColor);
+                  ctx.lineWidth = 2;
+                  ctx.setLineDash([]);
                   
-                  const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
-                  const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
-                  const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
-                  const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                  // Draw L-bracket at corner
+                  const drawCorner = (x: number, y: number, fromDx: number, fromDy: number, toDx: number, toDy: number) => {
+                    const fromDist = Math.abs(fromDx) + Math.abs(fromDy);
+                    const toDist = Math.abs(toDx) + Math.abs(toDy);
+                    if (fromDist < 5 || toDist < 5) return;
+                    const fromIsHorizontal = Math.abs(fromDx) > Math.abs(fromDy);
+                    const toIsHorizontal = Math.abs(toDx) > Math.abs(toDy);
+                    if (fromIsHorizontal === toIsHorizontal) return;
+                    
+                    const fromArmX = fromDx !== 0 ? Math.sign(fromDx) * markerSize : 0;
+                    const fromArmY = fromDy !== 0 ? Math.sign(fromDy) * markerSize : 0;
+                    const toArmX = toDx !== 0 ? Math.sign(toDx) * markerSize : 0;
+                    const toArmY = toDy !== 0 ? Math.sign(toDy) * markerSize : 0;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x + fromArmX, y + fromArmY);
+                    ctx.lineTo(x, y);
+                    ctx.lineTo(x + toArmX, y + toArmY);
+                    ctx.stroke();
+                  };
                   
-                  ctx.beginPath();
-                  ctx.moveTo(x + fromArmX, y + fromArmY);
-                  ctx.lineTo(x, y);
-                  ctx.lineTo(x + toArmX, y + toArmY);
-                  ctx.stroke();
-                };
-                
-                // Corner 1: (extendX, startY) - horizontal to vertical turn
-                drawCorner(extendX, startY, startX - extendX, 0, 0, targetExtendY - startY);
-                // Corner 2: (extendX, targetExtendY) - vertical to horizontal turn
-                drawCorner(extendX, targetExtendY, 0, startY - targetExtendY, endX - extendX, 0);
-                // Corner 3: (endX, targetExtendY) - horizontal to vertical turn
-                drawCorner(endX, targetExtendY, extendX - endX, 0, 0, endY - targetExtendY);
+                  // Corner 1: (extendX, startY) - horizontal to vertical turn
+                  drawCorner(extendX, startY, startX - extendX, 0, 0, targetExtendY - startY);
+                  // Corner 2: (extendX, targetExtendY) - vertical to horizontal turn
+                  drawCorner(extendX, targetExtendY, 0, startY - targetExtendY, endX - extendX, 0);
+                  // Corner 3: (endX, targetExtendY) - horizontal to vertical turn
+                  drawCorner(endX, targetExtendY, extendX - endX, 0, 0, endY - targetExtendY);
+                }
               }
             }
             
@@ -1173,6 +1295,224 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             ctx.restore();
           }
         });
+        
+        // ============================================
+        // LIGHT TRAIL ANIMATION ON HIGHLIGHTED PATH
+        // ============================================
+        // Draw animated light trail traveling from source to destination
+        // Each edge is drawn independently to avoid diagonal artifacts at interface transitions
+        if (highlightedPath && highlightedPath.edges && highlightedPath.edges.length > 0 && highlightedEdgeRoutesMap.size > 0) {
+          
+          // Get source node position to orient the first edge correctly
+          const sourceNodeId = highlightedPath.nodes && highlightedPath.nodes.length > 0 ? highlightedPath.nodes[0] : null;
+          const sourceNodePos = sourceNodeId ? positions[sourceNodeId] : null;
+          
+          // First, collect all edge routes and determine proper orientation
+          const orientedEdgeRoutes: {x: number, y: number}[][] = [];
+          let totalPathLength = 0;
+          const edgeLengths: number[] = [];
+          
+          highlightedPath.edges.forEach((edgeId: string, idx: number) => {
+            const route = highlightedEdgeRoutesMap.get(edgeId);
+            if (!route || route.length < 2) return;
+            
+            // Determine if route needs to be reversed
+            let orientedRoute = [...route];
+            
+            if (orientedEdgeRoutes.length === 0 && sourceNodePos) {
+              // First edge: orient based on source node position
+              const routeStart = route[0];
+              const routeEnd = route[route.length - 1];
+              
+              const distStartToSource = Math.sqrt(
+                Math.pow(routeStart.x - sourceNodePos.x, 2) + Math.pow(routeStart.y - sourceNodePos.y, 2)
+              );
+              const distEndToSource = Math.sqrt(
+                Math.pow(routeEnd.x - sourceNodePos.x, 2) + Math.pow(routeEnd.y - sourceNodePos.y, 2)
+              );
+              
+              // If the end is closer to source, reverse so start is closer to source
+              if (distEndToSource < distStartToSource) {
+                orientedRoute = [...route].reverse();
+              }
+            } else if (orientedEdgeRoutes.length > 0) {
+              // Subsequent edges: orient based on connection to previous edge
+              const prevRoute = orientedEdgeRoutes[orientedEdgeRoutes.length - 1];
+              const prevEnd = prevRoute[prevRoute.length - 1];
+              const routeStart = route[0];
+              const routeEnd = route[route.length - 1];
+              
+              const distToStart = Math.sqrt(
+                Math.pow(prevEnd.x - routeStart.x, 2) + Math.pow(prevEnd.y - routeStart.y, 2)
+              );
+              const distToEnd = Math.sqrt(
+                Math.pow(prevEnd.x - routeEnd.x, 2) + Math.pow(prevEnd.y - routeEnd.y, 2)
+              );
+              
+              if (distToEnd < distToStart) {
+                orientedRoute = [...route].reverse();
+              }
+            }
+            
+            // Calculate edge length
+            let edgeLength = 0;
+            for (let i = 0; i < orientedRoute.length - 1; i++) {
+              const dx = orientedRoute[i + 1].x - orientedRoute[i].x;
+              const dy = orientedRoute[i + 1].y - orientedRoute[i].y;
+              edgeLength += Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            orientedEdgeRoutes.push(orientedRoute);
+            edgeLengths.push(edgeLength);
+            totalPathLength += edgeLength;
+          });
+          
+          if (orientedEdgeRoutes.length > 0 && totalPathLength > 0) {
+            // Animation parameters
+            const progress = animationProgressRef.current;
+            const TRAIL_LENGTH = 0.3; // Trail covers 30% of the path
+            const NUM_TRAIL_SEGMENTS = 40;
+            
+            const headProgress = progress;
+            
+            // Get the highlight color based on dark mode
+            const trailBaseColor = darkMode 
+              ? { r: 255, g: 209, b: 102 }  // Yellow
+              : { r: 255, g: 107, b: 107 }; // Red
+            
+            ctx.save();
+            ctx.setLineDash([]);
+            ctx.lineCap = 'butt';
+            ctx.lineJoin = 'miter';
+            
+            // Build a flat list of all straight-line segments across the entire path
+            // Each segment has: startPoint, endPoint, startProgress, endProgress
+            const allLineSegments: {
+              start: {x: number, y: number},
+              end: {x: number, y: number},
+              startProg: number,
+              endProg: number
+            }[] = [];
+            
+            let cumulativeLength = 0;
+            for (const edgeRoute of orientedEdgeRoutes) {
+              for (let i = 0; i < edgeRoute.length - 1; i++) {
+                const segStart = edgeRoute[i];
+                const segEnd = edgeRoute[i + 1];
+                const dx = segEnd.x - segStart.x;
+                const dy = segEnd.y - segStart.y;
+                const segLength = Math.sqrt(dx * dx + dy * dy);
+                
+                if (segLength > 0) {
+                  const startProg = cumulativeLength / totalPathLength;
+                  const endProg = (cumulativeLength + segLength) / totalPathLength;
+                  
+                  allLineSegments.push({
+                    start: {...segStart},
+                    end: {...segEnd},
+                    startProg,
+                    endProg
+                  });
+                  
+                  cumulativeLength += segLength;
+                }
+              }
+            }
+            
+            // Helper: interpolate position within a line segment
+            const interpolate = (seg: typeof allLineSegments[0], prog: number): {x: number, y: number} => {
+              const t = (prog - seg.startProg) / (seg.endProg - seg.startProg);
+              return {
+                x: seg.start.x + (seg.end.x - seg.start.x) * t,
+                y: seg.start.y + (seg.end.y - seg.start.y) * t
+              };
+            };
+            
+            // Draw trail segments - each segment only draws within a single straight line
+            for (let i = 0; i < NUM_TRAIL_SEGMENTS; i++) {
+              const segmentRatio = i / NUM_TRAIL_SEGMENTS;
+              const nextSegmentRatio = (i + 1) / NUM_TRAIL_SEGMENTS;
+              
+              const trailSegStart = headProgress - TRAIL_LENGTH * (1 - segmentRatio);
+              const trailSegEnd = headProgress - TRAIL_LENGTH * (1 - nextSegmentRatio);
+              
+              if (trailSegEnd < 0) continue;
+              const clampedStart = Math.max(0, trailSegStart);
+              
+              // Calculate intensity and width based on position in trail
+              const intensity = nextSegmentRatio;
+              const baseWidth = 2;
+              const maxWidth = 8;
+              const lineWidth = baseWidth + (maxWidth - baseWidth) * intensity;
+              const alpha = 0.2 + 0.8 * intensity;
+              
+              ctx.strokeStyle = `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, ${alpha})`;
+              ctx.lineWidth = lineWidth;
+              
+              // Find all line segments that this trail segment intersects
+              // and draw only the portion within each line segment
+              for (const lineSeg of allLineSegments) {
+                // Check if trail segment overlaps with this line segment
+                if (trailSegEnd <= lineSeg.startProg || clampedStart >= lineSeg.endProg) {
+                  continue; // No overlap
+                }
+                
+                // Calculate the overlap range
+                const overlapStart = Math.max(clampedStart, lineSeg.startProg);
+                const overlapEnd = Math.min(trailSegEnd, lineSeg.endProg);
+                
+                if (overlapEnd <= overlapStart) continue;
+                
+                // Get start and end points within this line segment
+                const p1 = interpolate(lineSeg, overlapStart);
+                const p2 = interpolate(lineSeg, overlapEnd);
+                
+                // Draw this portion
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+              }
+            }
+            
+            // Draw glowing head
+            // Find which line segment the head is on
+            let headPos = allLineSegments.length > 0 ? allLineSegments[0].start : {x: 0, y: 0};
+            for (const lineSeg of allLineSegments) {
+              if (headProgress >= lineSeg.startProg && headProgress <= lineSeg.endProg) {
+                headPos = interpolate(lineSeg, headProgress);
+                break;
+              }
+            }
+            
+            // Outer glow
+            const glowRadius = 12;
+            const glowGradient = ctx.createRadialGradient(headPos.x, headPos.y, 0, headPos.x, headPos.y, glowRadius);
+            glowGradient.addColorStop(0, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.9)`);
+            glowGradient.addColorStop(0.4, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.5)`);
+            glowGradient.addColorStop(0.7, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.2)`);
+            glowGradient.addColorStop(1, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0)`);
+            
+            ctx.beginPath();
+            ctx.arc(headPos.x, headPos.y, glowRadius, 0, Math.PI * 2);
+            ctx.fillStyle = glowGradient;
+            ctx.fill();
+            
+            // Bright core
+            const coreRadius = 4;
+            const coreGradient = ctx.createRadialGradient(headPos.x, headPos.y, 0, headPos.x, headPos.y, coreRadius);
+            coreGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            coreGradient.addColorStop(0.5, `rgba(${Math.min(255, trailBaseColor.r + 50)}, ${Math.min(255, trailBaseColor.g + 50)}, ${Math.min(255, trailBaseColor.b + 50)}, 0.9)`);
+            coreGradient.addColorStop(1, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.7)`);
+            
+            ctx.beginPath();
+            ctx.arc(headPos.x, headPos.y, coreRadius, 0, Math.PI * 2);
+            ctx.fillStyle = coreGradient;
+            ctx.fill();
+            
+            ctx.restore();
+          }
+        }
       });
 
       network.on("hoverNode", (event) => {
