@@ -125,6 +125,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
   // Animation state for the light trail effect
   const animationRef = useRef<number | null>(null)
   const animationProgressRef = useRef<number>(0) // 0 to 1 representing position along path
+  const animationStartTimeRef = useRef<number | null>(null) // Persist start time across re-renders
+  const lastPathKeyRef = useRef<string>('') // Track if path actually changed
   
   // Use ref for darkMode to avoid network recreation on theme change
   const darkModeRef = useRef(darkMode)
@@ -151,7 +153,19 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         animationRef.current = null
       }
       animationProgressRef.current = 0
+      animationStartTimeRef.current = null
+      lastPathKeyRef.current = ''
       return
+    }
+
+    // Create a key to identify if the path content actually changed
+    const pathKey = highlightedPath.edges.join(',')
+    const pathActuallyChanged = pathKey !== lastPathKeyRef.current
+    
+    if (pathActuallyChanged) {
+      // Only reset animation if path content changed
+      lastPathKeyRef.current = pathKey
+      animationStartTimeRef.current = null // Will be set on first frame
     }
 
     // Animation parameters - duration scales with path length (number of edges)
@@ -160,11 +174,12 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
     const BASE_DURATION = 1000 // Base time for single edge
     const PER_EDGE_DURATION = 500 // Additional time per edge
     const ANIMATION_DURATION = BASE_DURATION + (numEdges - 1) * PER_EDGE_DURATION
-    let startTime: number | null = null
 
     const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const elapsed = timestamp - startTime
+      if (animationStartTimeRef.current === null) {
+        animationStartTimeRef.current = timestamp
+      }
+      const elapsed = timestamp - animationStartTimeRef.current
       
       // Progress from 0 to 1, then loop
       animationProgressRef.current = (elapsed % ANIMATION_DURATION) / ANIMATION_DURATION
@@ -177,15 +192,26 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
       animationRef.current = requestAnimationFrame(animate)
     }
 
-    animationRef.current = requestAnimationFrame(animate)
+    // Only start a new animation loop if one isn't already running
+    if (!animationRef.current) {
+      animationRef.current = requestAnimationFrame(animate)
+    }
 
+    return () => {
+      // Don't cancel animation on every effect run - only when component unmounts
+      // The cleanup will be handled when highlightedPath becomes null/empty
+    }
+  }, [highlightedPath])
+
+  // Cleanup animation on unmount
+  useEffect(() => {
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
         animationRef.current = null
       }
     }
-  }, [highlightedPath])
+  }, [])
 
   // Load node position data when positionsFile changes
   useEffect(() => {
@@ -1674,7 +1700,15 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         }
       }
     }
-  }, [networkData, darkMode, selectedNode, nodePositionData, clickHighlightedNode, highlightedPath])
+  }, [networkData, selectedNode, nodePositionData, clickHighlightedNode, highlightedPath])
+
+  // Separate effect for dark mode changes - only redraw, don't recreate network
+  // This preserves the animation state
+  useEffect(() => {
+    if (networkRef.current) {
+      networkRef.current.redraw()
+    }
+  }, [darkMode])
 
   const hasNodes = Array.isArray(networkData?.nodes) && networkData.nodes.length > 0
   const hasEdges = Array.isArray(networkData?.edges) && networkData.edges.length > 0
