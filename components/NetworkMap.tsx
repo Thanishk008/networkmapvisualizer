@@ -169,7 +169,7 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
     }
 
     // Animation parameters - duration scales with path length (number of edges)
-    // Base duration of 2000ms for first edge, plus 1500ms per additional edge
+    // Base duration of 1000ms for first edge, plus 500ms per additional edge (adjustable)
     const numEdges = highlightedPath.edges.length
     const BASE_DURATION = 1000 // Base time for single edge
     const PER_EDGE_DURATION = 500 // Additional time per edge

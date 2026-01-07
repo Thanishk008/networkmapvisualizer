@@ -5,11 +5,9 @@ import BackendNetworkExample from "@/components/BackendNetworkExample"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import DarkModeToggle from "@/components/DarkModeToggle"
 import NodeDetailsPanel from "@/components/NodeDetailsPanel"
-import InfoPanel from "@/components/InfoPanel"
 import { DATASETS, DatasetName } from "@/config/datasets"
 
 export default function Page() {
-  const [showInfo, setShowInfo] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<any>(null)
   const [datasetName, setDatasetName] = useState<DatasetName>("EST4 150 Node")
@@ -25,26 +23,6 @@ export default function Page() {
   return (
     <div className="app">
       <DarkModeToggle darkMode={darkMode} onToggle={() => setDarkMode(!darkMode)} />
-
-      <header className="app-header">
-        <h1>Network Map Visualizer</h1>
-        <p>IPv6 Multicast Routing Topology</p>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: '10px' }}>
-          <button onClick={() => setShowInfo(!showInfo)} 
-          className="header-button header-action action-btn info-button highlight-enabled"
-          title = "Toggle information panel"
-          >
-            {showInfo ? "Hide Info" : "Show Info"}
-          </button>
-          <button
-            onClick={() => window.dispatchEvent(new Event('network-refresh'))}
-            className="header-button header-action action-btn refresh-button highlight-enabled"
-            title="Refresh network data"
-          >
-            Refresh Data
-          </button>
-        </div>
-      </header>
 
       <main className="app-main">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', width: '100%' }}>
@@ -96,10 +74,6 @@ export default function Page() {
             onClose={() => setSelectedNodeDetails(null)}
             darkMode={darkMode}
           />
-        )}
-
-        {showInfo && (
-          <InfoPanel darkMode={darkMode} onClose={() => setShowInfo(false)} />
         )}
       </main>
 

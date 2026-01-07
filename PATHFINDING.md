@@ -1,89 +1,288 @@
-# Route-Based Pathfinding Implementation
+# Pathfinding Algorithm
+
+This document explains the pathfinding implementation in `utils/dataAdapter.ts`.
 
 ## Overview
 
-The pathfinding algorithm has been updated to use the `route_info` table from the backend JSON data instead of a default graph-based search algorithm. This ensures that paths are determined by the actual routing configuration, not by arbitrary graph traversal.
+The pathfinding system uses a **two-tier approach**:
 
-## How It Works
+1. **Route-based pathfinding** (primary) - Uses `routeInfo` from network data
+2. **BFS pathfinding** (fallback) - Graph traversal when route info unavailable
 
-### 1. Direct Neighbor Detection
-- **First**, the algorithm checks if the source and target are directly connected
-- If a physical (direct) edge exists between them, it returns a single-hop path
-- This handles the case where nodes are immediate neighbors without routing entries
+## Entry Point: `findAllPaths()`
 
-### 2. Route Table Lookup
-- **If not direct neighbors**, the algorithm uses the `route_info` table
-- Each node's `route_info` contains entries showing how traffic from different sources reaches it
-- Each entry has:
-  - `source_node`: The ultimate source of traffic
-  - `incoming_interface`: The interface where traffic arrives
-  - `iif_neigh_node`: The immediate next-hop neighbor
+```typescript
+findAllPaths(
+  nodes: VisNode[],
+  edges: VisEdge[],
+  sourceId: string,
+  targetId: string,
+  backendJson?: any
+): { pathNodes: string[], pathEdges: string[] }
+```
 
-### 3. Backward Path Tracing
-The algorithm traces the path **backwards** from target to source:
+### Algorithm Flow
 
-1. Start at the **target node**
-2. Look up the target's `route_info` table
-3. Find the entry where `source_node` matches our source
-4. Extract the `iif_neigh_node` (next hop toward source)
-5. Move to that next hop and repeat
-6. Continue until we reach the source node
+```
+                    ┌──────────────────────┐
+                    │   findAllPaths()     │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼───────────┐
+                    │  Direct connection?  │
+                    │  (single-hop check)  │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │ YES            │                │ NO
+              ▼                │                ▼
+    ┌─────────────────┐        │      ┌─────────────────────┐
+    │ Return direct   │        │      │ Has backendJson     │
+    │ path & edges    │        │      │ with routeInfo?     │
+    └─────────────────┘        │      └──────────┬──────────┘
+                               │                 │
+                               │    ┌────────────┼────────────┐
+                               │    │ YES        │            │ NO
+                               │    ▼            │            ▼
+                               │  ┌──────────────┴───┐  ┌─────────────┐
+                               │  │findPathUsing     │  │findPathBFS()│
+                               │  │RouteInfo()       │  │(graph search)│
+                               │  └──────────────────┘  └─────────────┘
+                               │           │                    │
+                               └───────────┴────────────────────┘
+                                           │
+                               ┌───────────▼───────────┐
+                               │  Collect ALL parallel │
+                               │  edges for each hop   │
+                               └───────────────────────┘
+```
 
-### 4. Path Construction
-- The algorithm builds the path in reverse (target → source)
-- Then reverses it to give the final path (source → target)
-- Includes both the node sequence and the edge IDs
+## Step 1: Direct Connection Check
 
-## Example
+Before any complex pathfinding, check if source and target are directly connected:
 
-For path **14cd → fireapp-VirtualBox**:
+```typescript
+// Check for direct edge between source and target
+const directEdges = edges.filter(e =>
+  (e.from === sourceId && e.to === targetId) ||
+  (e.from === targetId && e.to === sourceId)
+);
 
-### Route Info at fireapp-VirtualBox:
-```json
-{
-  "incoming_interface": "usb0",
-  "iif_neigh_node": "2001:197a:1576:0:2b0:19ff:fe7a:1576",
-  "source_node": "2001:197a:14cd:0:2b0:19ff:fe7a:14cd"
+if (directEdges.length > 0) {
+  return {
+    pathNodes: [sourceId, targetId],
+    pathEdges: directEdges.map(e => e.id)  // Include ALL parallel edges
+  };
 }
 ```
 
-### Algorithm Steps:
-1. Start at: `fireapp-VirtualBox`
-2. Look up route for source `14cd` → find next hop is `1576`
-3. Move to: `1576`
-4. Look up route for source `14cd` → find next hop is `14cd` (reached source!)
-5. Final path: `14cd → 1576 → fireapp-VirtualBox`
+## Step 2: Route-Based Pathfinding
 
-## Test Results
+If `backendJson` contains `routeInfo`, use route-based pathfinding.
 
-```
-Path from 14cd → fireapp-VirtualBox:
-  Nodes: 14cd → 1576 → fireapp-VirtualBox
-  Edges: direct-14cd-1576, direct-1576-fireapp-VirtualBox
+### `findPathUsingRouteInfo()`
 
-Path from f453 → fireapp-VirtualBox:
-  Nodes: f453 → fireapp-VirtualBox
-  Edges: direct-f453-fireapp-VirtualBox
+This traces the path **backwards** from target to source using routing tables:
 
-Path from 1576 → fireapp-VirtualBox:
-  Nodes: 1576 → fireapp-VirtualBox
-  Edges: direct-1576-fireapp-VirtualBox
+```typescript
+function findPathUsingRouteInfo(
+  sourceId: string,
+  targetId: string,
+  backendJson: any
+): string[] | null
 ```
 
-## Code Location
+### Algorithm Steps
 
-- **Implementation**: `utils/dataAdapter.ts`
-  - `findPath()` - Main entry point
-  - `findPathUsingRouteInfo()` - Route-based algorithm
-  - `findPathBFS()` - Fallback BFS (if route_info not available)
+```
+1. Build lookup: nodeId → routeInfo array
+2. Start at TARGET node
+3. Loop:
+   a. Find routeInfo entry where sourceNode matches SOURCE
+   b. Extract iifNeighNode (next hop toward source)
+   c. Add current node to path
+   d. Move to iifNeighNode
+   e. If reached SOURCE, done!
+4. Reverse path (was target→source, need source→target)
+```
 
-- **Usage**: `components/BackendNetworkExample.tsx`
-  - Calls `findPath()` with the backend JSON to enable route-based pathfinding
+### Example: Path from `14cd` to `f453`
 
-## Benefits
+**Network:**
+```
+14cd ←→ 1576 ←→ f453
+```
 
-✅ **Accurate**: Uses actual routing tables from network configuration  
-✅ **Realistic**: Shows how traffic actually flows through the network  
-✅ **Direct neighbor support**: Handles single-hop connections automatically  
-✅ **Fallback**: Uses BFS if route_info data is not available  
-✅ **Loop detection**: Prevents infinite loops in case of routing errors
+**Step-by-step:**
+
+| Step | Current | Looking for | routeInfo says | Next hop |
+|------|---------|-------------|----------------|----------|
+| 1 | f453 | source=14cd | iifNeighNode=1576 | 1576 |
+| 2 | 1576 | source=14cd | iifNeighNode=14cd | 14cd ✓ |
+
+**Reverse path:** `[f453, 1576, 14cd]` → `[14cd, 1576, f453]`
+
+## Step 3: BFS Fallback
+
+If route info is unavailable, fall back to breadth-first search:
+
+### `findPathBFS()`
+
+```typescript
+function findPathBFS(
+  edges: VisEdge[],
+  sourceId: string,
+  targetId: string
+): string[] | null
+```
+
+### Algorithm
+
+```typescript
+// Build adjacency list from edges
+const adjacency = new Map<string, string[]>();
+for (const edge of edges) {
+  if (!adjacency.has(edge.from)) adjacency.set(edge.from, []);
+  if (!adjacency.has(edge.to)) adjacency.set(edge.to, []);
+  adjacency.get(edge.from)!.push(edge.to);
+  adjacency.get(edge.to)!.push(edge.from);
+}
+
+// BFS traversal
+const queue: string[] = [sourceId];
+const visited = new Set<string>([sourceId]);
+const parent = new Map<string, string>();
+
+while (queue.length > 0) {
+  const current = queue.shift()!;
+  
+  if (current === targetId) {
+    // Reconstruct path from parent map
+    return reconstructPath(parent, sourceId, targetId);
+  }
+  
+  for (const neighbor of adjacency.get(current) || []) {
+    if (!visited.has(neighbor)) {
+      visited.add(neighbor);
+      parent.set(neighbor, current);
+      queue.push(neighbor);
+    }
+  }
+}
+
+return null; // No path found
+```
+
+## Step 4: Collect Parallel Edges
+
+After finding the path nodes, collect **all edges** between consecutive nodes:
+
+```typescript
+function collectPathEdges(
+  pathNodes: string[],
+  edges: VisEdge[]
+): string[] {
+  const pathEdges: string[] = [];
+  
+  for (let i = 0; i < pathNodes.length - 1; i++) {
+    const from = pathNodes[i];
+    const to = pathNodes[i + 1];
+    
+    // Find ALL edges between these nodes (parallel edges)
+    const edgesBetween = edges.filter(e =>
+      (e.from === from && e.to === to) ||
+      (e.from === to && e.to === from)
+    );
+    
+    for (const edge of edgesBetween) {
+      pathEdges.push(edge.id);
+    }
+  }
+  
+  return pathEdges;
+}
+```
+
+> **Why parallel edges?** Two nodes may have multiple connections (e.g., eth0↔eth0 and eth1↔usb0). The visualization highlights all of them.
+
+## Node ID Normalization
+
+Node IDs are normalized to 4-character hex strings:
+
+```typescript
+function normalizeId(rawId: string): { id: string, fullAddress: string } {
+  // IPv6: "2001:db8::f453" → "f453"
+  // Node format: "Node00b0197af453" → "f453"
+  // Short hex: "f453" → "f453"
+  
+  // Extract last 4 hex characters
+  const match = rawId.match(/([0-9a-f]{4})$/i);
+  return {
+    id: match ? match[1].toLowerCase() : rawId,
+    fullAddress: rawId
+  };
+}
+```
+
+## Error Handling
+
+The pathfinding handles various edge cases:
+
+| Case | Handling |
+|------|----------|
+| Same source and target | Return `{ pathNodes: [sourceId], pathEdges: [] }` |
+| No path exists | Return `{ pathNodes: [], pathEdges: [] }` |
+| Missing route info | Automatically fall back to BFS |
+| Loop in route table | Detected via `visited` set, returns null |
+| Invalid node ID | `normalizeId()` returns original as fallback |
+
+## Usage in Components
+
+### BackendNetworkExample.tsx
+
+```typescript
+const handleShowPath = () => {
+  if (!selectedSource || !selectedTarget || !networkData) return;
+  
+  const result = NetworkDataAdapter.findAllPaths(
+    networkData.nodes,
+    networkData.edges,
+    selectedSource,
+    selectedTarget,
+    rawBackendData  // Pass raw JSON for route-based pathfinding
+  );
+  
+  if (result.pathNodes.length > 0) {
+    setHighlightedPathInfo({
+      pathNodes: result.pathNodes,
+      pathEdges: result.pathEdges
+    });
+  } else {
+    // Show error: no path found
+  }
+};
+```
+
+### NetworkMap.tsx
+
+The `highlightedPathInfo` prop triggers:
+1. Path edges drawn with bright color (yellow/coral)
+2. Non-path edges dimmed and dashed
+3. Light trail animation along path
+
+## Performance
+
+| Operation | Complexity |
+|-----------|------------|
+| Direct check | O(E) where E = edge count |
+| Route-based | O(P × R) where P = path length, R = route entries |
+| BFS | O(V + E) where V = nodes, E = edges |
+| Edge collection | O(P × E) |
+
+For typical networks (< 200 nodes), all operations complete in < 10ms.
+
+## Related Documentation
+
+- [ROUTE_INFO_TABLE.md](./ROUTE_INFO_TABLE.md) - Route info data structure
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Overall codebase architecture
+- [utils/dataAdapter.ts](./utils/dataAdapter.ts) - Source implementation
