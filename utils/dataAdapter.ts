@@ -306,6 +306,8 @@ export class NetworkDataAdapter {
 
   /**
    * Fallback BFS-based pathfinding (original implementation)
+   * After finding the node path via BFS, collects ALL edges between consecutive nodes
+   * to support multi-path visualization (multiple physical links between same node pairs)
    */
   private static findPathBFS(sourceId: string, targetId: string, edges: any[], bidirectional = true) {
     const adj = new Map<string, Array<{ to: string; edgeId: string }>>()
@@ -339,12 +341,25 @@ export class NetworkDataAdapter {
       const [current, path] = next
 
       if (current === targetId) {
+        // Found a path! Now collect ALL edges between consecutive nodes
         const pathNodes = [sourceId]
-        const pathEdges = []
+        const pathEdges: string[] = []
+        
         for (const step of path) {
           pathNodes.push(step.to)
-          pathEdges.push(step.edgeId)
         }
+        
+        // For each consecutive node pair, find ALL edges (not just the one BFS found)
+        for (let i = 0; i < pathNodes.length - 1; i++) {
+          const fromNode = pathNodes[i]
+          const toNode = pathNodes[i + 1]
+          
+          // Find all edges between these two nodes
+          const allEdgesBetween = this.findAllEdgesBetween(edges, fromNode, toNode)
+          pathEdges.push(...allEdgesBetween)
+        }
+        
+        console.log(`[findPathBFS] Found path with ${pathNodes.length} nodes and ${pathEdges.length} edges (including parallel edges)`)
         return { pathEdges, pathNodes }
       }
 

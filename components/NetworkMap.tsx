@@ -157,8 +157,8 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
     // Animation parameters - duration scales with path length (number of edges)
     // Base duration of 2000ms for first edge, plus 1500ms per additional edge
     const numEdges = highlightedPath.edges.length
-    const BASE_DURATION = 2000 // Base time for single edge
-    const PER_EDGE_DURATION = 1500 // Additional time per edge
+    const BASE_DURATION = 1000 // Base time for single edge
+    const PER_EDGE_DURATION = 500 // Additional time per edge
     const ANIMATION_DURATION = BASE_DURATION + (numEdges - 1) * PER_EDGE_DURATION
     let startTime: number | null = null
 
@@ -808,17 +808,29 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
               y: pos.y
             }));
             
+            // Smaller exclusion zone for source/destination nodes - covers node body AND gap to interfaces
+            // This prevents lines from routing between the node and its interface boxes
+            // Vertical: 30 (interface distance) + 9 (half interface height) + margin = 45
+            // Horizontal: 55 (interface distance) + 12 (half interface width) + margin = 72
+            const nodeBodyHalfSizeY = 45; // Covers node to top/bottom interfaces
+            const nodeBodyHalfSizeX = 72; // Covers node to left/right interfaces
+            
             // Helper to check if a horizontal segment at Y would pass through ANY node's exclusion zone
             const wouldCrossAnyNodeHorizontally = (y: number, x1: number, x2: number, excludeNodeIds: string[] = []) => {
               const minX = Math.min(x1, x2);
               const maxX = Math.max(x1, x2);
               return allNodePositions.some(nodePos => {
-                if (excludeNodeIds.includes(nodePos.id)) return false;
+                // For excluded nodes (source/dest), use smaller exclusion to prevent center crossing
+                // but still allow the line to connect to interfaces on the periphery
+                const isExcluded = excludeNodeIds.includes(nodePos.id);
+                const halfSizeX = isExcluded ? nodeBodyHalfSizeX : nodeExclusionHalfSizeX;
+                const halfSizeY = isExcluded ? nodeBodyHalfSizeY : nodeExclusionHalfSizeY;
+                
                 // Check if Y is within node's vertical exclusion zone AND segment's X range overlaps node's X zone
-                return y > nodePos.y - nodeExclusionHalfSizeY && 
-                       y < nodePos.y + nodeExclusionHalfSizeY &&
-                       maxX > nodePos.x - nodeExclusionHalfSizeX &&
-                       minX < nodePos.x + nodeExclusionHalfSizeX;
+                return y > nodePos.y - halfSizeY && 
+                       y < nodePos.y + halfSizeY &&
+                       maxX > nodePos.x - halfSizeX &&
+                       minX < nodePos.x + halfSizeX;
               });
             };
             
@@ -827,12 +839,15 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
               const minY = Math.min(y1, y2);
               const maxY = Math.max(y1, y2);
               return allNodePositions.some(nodePos => {
-                if (excludeNodeIds.includes(nodePos.id)) return false;
+                // For excluded nodes (source/dest), use smaller exclusion to prevent center crossing
+                const isExcluded = excludeNodeIds.includes(nodePos.id);
+                const halfSizeX = isExcluded ? nodeBodyHalfSizeX : nodeExclusionHalfSizeX;
+                const halfSizeY = isExcluded ? nodeBodyHalfSizeY : nodeExclusionHalfSizeY;
                 // Check if X is within node's horizontal exclusion zone AND segment's Y range overlaps node's Y zone
-                return x > nodePos.x - nodeExclusionHalfSizeX && 
-                       x < nodePos.x + nodeExclusionHalfSizeX &&
-                       maxY > nodePos.y - nodeExclusionHalfSizeY &&
-                       minY < nodePos.y + nodeExclusionHalfSizeY;
+                return x > nodePos.x - halfSizeX && 
+                       x < nodePos.x + halfSizeX &&
+                       maxY > nodePos.y - halfSizeY &&
+                       minY < nodePos.y + halfSizeY;
               });
             };
             
@@ -1300,80 +1315,104 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
         // LIGHT TRAIL ANIMATION ON HIGHLIGHTED PATH
         // ============================================
         // Draw animated light trail traveling from source to destination
-        // Each edge is drawn independently to avoid diagonal artifacts at interface transitions
+        // For multi-path: animate all parallel edges simultaneously at each hop
         if (highlightedPath && highlightedPath.edges && highlightedPath.edges.length > 0 && highlightedEdgeRoutesMap.size > 0) {
           
-          // Get source node position to orient the first edge correctly
-          const sourceNodeId = highlightedPath.nodes && highlightedPath.nodes.length > 0 ? highlightedPath.nodes[0] : null;
+          // Get source and target node positions
+          const pathNodes = highlightedPath.nodes || [];
+          const sourceNodeId = pathNodes.length > 0 ? pathNodes[0] : null;
+          const targetNodeId = pathNodes.length > 0 ? pathNodes[pathNodes.length - 1] : null;
           const sourceNodePos = sourceNodeId ? positions[sourceNodeId] : null;
+          const targetNodePos = targetNodeId ? positions[targetNodeId] : null;
           
-          // First, collect all edge routes and determine proper orientation
-          const orientedEdgeRoutes: {x: number, y: number}[][] = [];
-          let totalPathLength = 0;
-          const edgeLengths: number[] = [];
-          
-          highlightedPath.edges.forEach((edgeId: string, idx: number) => {
-            const route = highlightedEdgeRoutesMap.get(edgeId);
-            if (!route || route.length < 2) return;
-            
-            // Determine if route needs to be reversed
-            let orientedRoute = [...route];
-            
-            if (orientedEdgeRoutes.length === 0 && sourceNodePos) {
-              // First edge: orient based on source node position
-              const routeStart = route[0];
-              const routeEnd = route[route.length - 1];
-              
-              const distStartToSource = Math.sqrt(
-                Math.pow(routeStart.x - sourceNodePos.x, 2) + Math.pow(routeStart.y - sourceNodePos.y, 2)
-              );
-              const distEndToSource = Math.sqrt(
-                Math.pow(routeEnd.x - sourceNodePos.x, 2) + Math.pow(routeEnd.y - sourceNodePos.y, 2)
-              );
-              
-              // If the end is closer to source, reverse so start is closer to source
-              if (distEndToSource < distStartToSource) {
-                orientedRoute = [...route].reverse();
-              }
-            } else if (orientedEdgeRoutes.length > 0) {
-              // Subsequent edges: orient based on connection to previous edge
-              const prevRoute = orientedEdgeRoutes[orientedEdgeRoutes.length - 1];
-              const prevEnd = prevRoute[prevRoute.length - 1];
-              const routeStart = route[0];
-              const routeEnd = route[route.length - 1];
-              
-              const distToStart = Math.sqrt(
-                Math.pow(prevEnd.x - routeStart.x, 2) + Math.pow(prevEnd.y - routeStart.y, 2)
-              );
-              const distToEnd = Math.sqrt(
-                Math.pow(prevEnd.x - routeEnd.x, 2) + Math.pow(prevEnd.y - routeEnd.y, 2)
-              );
-              
-              if (distToEnd < distToStart) {
-                orientedRoute = [...route].reverse();
-              }
-            }
-            
-            // Calculate edge length
-            let edgeLength = 0;
-            for (let i = 0; i < orientedRoute.length - 1; i++) {
-              const dx = orientedRoute[i + 1].x - orientedRoute[i].x;
-              const dy = orientedRoute[i + 1].y - orientedRoute[i].y;
-              edgeLength += Math.sqrt(dx * dx + dy * dy);
-            }
-            
-            orientedEdgeRoutes.push(orientedRoute);
-            edgeLengths.push(edgeLength);
-            totalPathLength += edgeLength;
+          // Build edge lookup map for quick access to from/to properties
+          const edgeLookup = new Map<string, {from: string, to: string}>();
+          edges.forEach((e: any) => {
+            edgeLookup.set(e.id, { from: e.from, to: e.to });
           });
           
-          if (orientedEdgeRoutes.length > 0 && totalPathLength > 0) {
+          // Build a "logical path" based on node sequence
+          // Each hop may have multiple parallel edges
+          interface HopData {
+            fromNode: string;
+            toNode: string;
+            edges: {
+              edgeId: string;
+              route: {x: number, y: number}[];
+              length: number;
+            }[];
+            maxLength: number; // longest edge in this hop (for timing)
+          }
+          
+          const hops: HopData[] = [];
+          
+          // Group edges by the node-pairs they connect
+          // Use pathNodes to determine hop order
+          for (let i = 0; i < pathNodes.length - 1; i++) {
+            const fromNode = pathNodes[i];
+            const toNode = pathNodes[i + 1];
+            const fromPos = positions[fromNode];
+            const toPos = positions[toNode];
+            
+            if (!fromPos || !toPos) continue;
+            
+            const hopEdges: HopData['edges'] = [];
+            
+            // Find all edges that connect these two nodes using edge metadata (not geometry)
+            for (const edgeId of highlightedPath.edges) {
+              const route = highlightedEdgeRoutesMap.get(edgeId);
+              if (!route || route.length < 2) continue;
+              
+              // Get edge metadata to check from/to nodes
+              const edgeMeta = edgeLookup.get(edgeId);
+              if (!edgeMeta) continue;
+              
+              let orientedRoute: {x: number, y: number}[] | null = null;
+              
+              // Check if this edge connects fromNode to toNode (in either direction)
+              if (edgeMeta.from === fromNode && edgeMeta.to === toNode) {
+                // Edge goes from fromNode to toNode - use route as-is
+                orientedRoute = [...route];
+              } else if (edgeMeta.from === toNode && edgeMeta.to === fromNode) {
+                // Edge goes from toNode to fromNode - reverse the route
+                orientedRoute = [...route].reverse();
+              }
+              
+              if (orientedRoute) {
+                // Calculate edge length
+                let edgeLength = 0;
+                for (let j = 0; j < orientedRoute.length - 1; j++) {
+                  const dx = orientedRoute[j + 1].x - orientedRoute[j].x;
+                  const dy = orientedRoute[j + 1].y - orientedRoute[j].y;
+                  edgeLength += Math.sqrt(dx * dx + dy * dy);
+                }
+                
+                hopEdges.push({
+                  edgeId,
+                  route: orientedRoute,
+                  length: edgeLength
+                });
+              }
+            }
+            
+            if (hopEdges.length > 0) {
+              hops.push({
+                fromNode,
+                toNode,
+                edges: hopEdges,
+                maxLength: Math.max(...hopEdges.map(e => e.length))
+              });
+            }
+          }
+          
+          if (hops.length > 0) {
+            // Calculate total path length (using max edge length at each hop)
+            const totalPathLength = hops.reduce((sum, hop) => sum + hop.maxLength, 0);
+            
             // Animation parameters
             const progress = animationProgressRef.current;
             const TRAIL_LENGTH = 0.3; // Trail covers 30% of the path
             const NUM_TRAIL_SEGMENTS = 40;
-            
-            const headProgress = progress;
             
             // Get the highlight color based on dark mode
             const trailBaseColor = darkMode 
@@ -1385,42 +1424,58 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
             ctx.lineCap = 'butt';
             ctx.lineJoin = 'miter';
             
-            // Build a flat list of all straight-line segments across the entire path
-            // Each segment has: startPoint, endPoint, startProgress, endProgress
-            const allLineSegments: {
-              start: {x: number, y: number},
-              end: {x: number, y: number},
-              startProg: number,
-              endProg: number
-            }[] = [];
+            // Build line segments for ALL edges, with progress mapped to the logical path
+            // Each edge within a hop gets the same progress range (parallel animation)
+            interface LineSegment {
+              start: {x: number, y: number};
+              end: {x: number, y: number};
+              startProg: number;
+              endProg: number;
+            }
             
-            let cumulativeLength = 0;
-            for (const edgeRoute of orientedEdgeRoutes) {
-              for (let i = 0; i < edgeRoute.length - 1; i++) {
-                const segStart = edgeRoute[i];
-                const segEnd = edgeRoute[i + 1];
-                const dx = segEnd.x - segStart.x;
-                const dy = segEnd.y - segStart.y;
-                const segLength = Math.sqrt(dx * dx + dy * dy);
+            const allLineSegments: LineSegment[] = [];
+            let hopStartProg = 0;
+            
+            for (const hop of hops) {
+              const hopEndProg = hopStartProg + hop.maxLength / totalPathLength;
+              
+              // For each edge in this hop, create line segments with the same progress range
+              for (const edge of hop.edges) {
+                const edgeLengthRatio = edge.length / hop.maxLength;
+                let cumulativeLength = 0;
                 
-                if (segLength > 0) {
-                  const startProg = cumulativeLength / totalPathLength;
-                  const endProg = (cumulativeLength + segLength) / totalPathLength;
+                for (let i = 0; i < edge.route.length - 1; i++) {
+                  const segStart = edge.route[i];
+                  const segEnd = edge.route[i + 1];
+                  const dx = segEnd.x - segStart.x;
+                  const dy = segEnd.y - segStart.y;
+                  const segLength = Math.sqrt(dx * dx + dy * dy);
                   
-                  allLineSegments.push({
-                    start: {...segStart},
-                    end: {...segEnd},
-                    startProg,
-                    endProg
-                  });
-                  
-                  cumulativeLength += segLength;
+                  if (segLength > 0 && edge.length > 0) {
+                    // Map segment progress within the hop's progress range
+                    const segStartRatio = cumulativeLength / edge.length;
+                    const segEndRatio = (cumulativeLength + segLength) / edge.length;
+                    
+                    const startProg = hopStartProg + (hopEndProg - hopStartProg) * segStartRatio;
+                    const endProg = hopStartProg + (hopEndProg - hopStartProg) * segEndRatio;
+                    
+                    allLineSegments.push({
+                      start: {...segStart},
+                      end: {...segEnd},
+                      startProg,
+                      endProg
+                    });
+                    
+                    cumulativeLength += segLength;
+                  }
                 }
               }
+              
+              hopStartProg = hopEndProg;
             }
             
             // Helper: interpolate position within a line segment
-            const interpolate = (seg: typeof allLineSegments[0], prog: number): {x: number, y: number} => {
+            const interpolate = (seg: LineSegment, prog: number): {x: number, y: number} => {
               const t = (prog - seg.startProg) / (seg.endProg - seg.startProg);
               return {
                 x: seg.start.x + (seg.end.x - seg.start.x) * t,
@@ -1428,7 +1483,9 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
               };
             };
             
-            // Draw trail segments - each segment only draws within a single straight line
+            const headProgress = progress;
+            
+            // Draw trail segments on ALL edges simultaneously
             for (let i = 0; i < NUM_TRAIL_SEGMENTS; i++) {
               const segmentRatio = i / NUM_TRAIL_SEGMENTS;
               const nextSegmentRatio = (i + 1) / NUM_TRAIL_SEGMENTS;
@@ -1449,25 +1506,20 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
               ctx.strokeStyle = `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, ${alpha})`;
               ctx.lineWidth = lineWidth;
               
-              // Find all line segments that this trail segment intersects
-              // and draw only the portion within each line segment
+              // Draw on ALL line segments that fall within this trail progress range
               for (const lineSeg of allLineSegments) {
-                // Check if trail segment overlaps with this line segment
                 if (trailSegEnd <= lineSeg.startProg || clampedStart >= lineSeg.endProg) {
                   continue; // No overlap
                 }
                 
-                // Calculate the overlap range
                 const overlapStart = Math.max(clampedStart, lineSeg.startProg);
                 const overlapEnd = Math.min(trailSegEnd, lineSeg.endProg);
                 
                 if (overlapEnd <= overlapStart) continue;
                 
-                // Get start and end points within this line segment
                 const p1 = interpolate(lineSeg, overlapStart);
                 const p2 = interpolate(lineSeg, overlapEnd);
                 
-                // Draw this portion
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 ctx.lineTo(p2.x, p2.y);
@@ -1475,40 +1527,57 @@ export default function NetworkMap({ networkData, onNodeHover, onNodeClick, onNo
               }
             }
             
-            // Draw glowing head
-            // Find which line segment the head is on
-            let headPos = allLineSegments.length > 0 ? allLineSegments[0].start : {x: 0, y: 0};
+            // Draw glowing head at target node position (or interpolated position on all edges)
+            // For multi-path, draw heads on ALL edges at the current progress
+            const headPositions: {x: number, y: number}[] = [];
+            
+            // Find all unique head positions at current progress
+            const seenPositions = new Set<string>();
             for (const lineSeg of allLineSegments) {
               if (headProgress >= lineSeg.startProg && headProgress <= lineSeg.endProg) {
-                headPos = interpolate(lineSeg, headProgress);
-                break;
+                const pos = interpolate(lineSeg, headProgress);
+                const key = `${Math.round(pos.x)},${Math.round(pos.y)}`;
+                if (!seenPositions.has(key)) {
+                  seenPositions.add(key);
+                  headPositions.push(pos);
+                }
               }
             }
             
-            // Outer glow
-            const glowRadius = 12;
-            const glowGradient = ctx.createRadialGradient(headPos.x, headPos.y, 0, headPos.x, headPos.y, glowRadius);
-            glowGradient.addColorStop(0, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.9)`);
-            glowGradient.addColorStop(0.4, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.5)`);
-            glowGradient.addColorStop(0.7, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.2)`);
-            glowGradient.addColorStop(1, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0)`);
+            // If no position found (head past all segments), use target position
+            if (headPositions.length === 0 && targetNodePos) {
+              headPositions.push({x: targetNodePos.x, y: targetNodePos.y});
+            } else if (headPositions.length === 0 && allLineSegments.length > 0) {
+              headPositions.push(allLineSegments[allLineSegments.length - 1].end);
+            }
             
-            ctx.beginPath();
-            ctx.arc(headPos.x, headPos.y, glowRadius, 0, Math.PI * 2);
-            ctx.fillStyle = glowGradient;
-            ctx.fill();
-            
-            // Bright core
-            const coreRadius = 4;
-            const coreGradient = ctx.createRadialGradient(headPos.x, headPos.y, 0, headPos.x, headPos.y, coreRadius);
-            coreGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            coreGradient.addColorStop(0.5, `rgba(${Math.min(255, trailBaseColor.r + 50)}, ${Math.min(255, trailBaseColor.g + 50)}, ${Math.min(255, trailBaseColor.b + 50)}, 0.9)`);
-            coreGradient.addColorStop(1, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.7)`);
-            
-            ctx.beginPath();
-            ctx.arc(headPos.x, headPos.y, coreRadius, 0, Math.PI * 2);
-            ctx.fillStyle = coreGradient;
-            ctx.fill();
+            // Draw glow at each head position
+            for (const headPos of headPositions) {
+              // Outer glow
+              const glowRadius = 12;
+              const glowGradient = ctx.createRadialGradient(headPos.x, headPos.y, 0, headPos.x, headPos.y, glowRadius);
+              glowGradient.addColorStop(0, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.9)`);
+              glowGradient.addColorStop(0.4, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.5)`);
+              glowGradient.addColorStop(0.7, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.2)`);
+              glowGradient.addColorStop(1, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0)`);
+              
+              ctx.beginPath();
+              ctx.arc(headPos.x, headPos.y, glowRadius, 0, Math.PI * 2);
+              ctx.fillStyle = glowGradient;
+              ctx.fill();
+              
+              // Bright core
+              const coreRadius = 4;
+              const coreGradient = ctx.createRadialGradient(headPos.x, headPos.y, 0, headPos.x, headPos.y, coreRadius);
+              coreGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+              coreGradient.addColorStop(0.5, `rgba(${Math.min(255, trailBaseColor.r + 50)}, ${Math.min(255, trailBaseColor.g + 50)}, ${Math.min(255, trailBaseColor.b + 50)}, 0.9)`);
+              coreGradient.addColorStop(1, `rgba(${trailBaseColor.r}, ${trailBaseColor.g}, ${trailBaseColor.b}, 0.7)`);
+              
+              ctx.beginPath();
+              ctx.arc(headPos.x, headPos.y, coreRadius, 0, Math.PI * 2);
+              ctx.fillStyle = coreGradient;
+              ctx.fill();
+            }
             
             ctx.restore();
           }
