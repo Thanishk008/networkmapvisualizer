@@ -19,11 +19,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe6f"
+            "neighIp": "2001:db8::2b0:19ff:fe73:fc94"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc94"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe6f"
           }
         ]
       },
@@ -102,11 +102,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe44"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1973:fe45:0:2b0:19ff:fe73:fe45"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe44"
           }
         ]
       },
@@ -127,10 +127,10 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f030"
           },
           {
-            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f02f"
           },
           {
@@ -156,15 +156,15 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f088"
-          },
-          {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f087"
+            "neighIp": "fe80::2b0:19ff:fe73:f087"
           },
           {
             "interface": "usb0",
             "neighIp": "2001:1973:f06e:0:2b0:19ff:fe73:f06e"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f088"
           }
         ]
       },
@@ -193,11 +193,11 @@
             "neighIp": "2001:1973:f89d:0:2b0:19ff:fe73:f89d"
           },
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fbf7"
+            "neighIp": "2001:db8::2b0:19ff:fe77:5612"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe77:5612"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fbf7"
           }
         ]
       },
@@ -253,6 +253,65 @@
         ]
       },
       {
+        "nodeName": "Node00b01973f027",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1973:f02a:0:2b0:19ff:fe73:f02a"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:f029:0:2b0:19ff:fe73:f029"
+          },
+          {
+            "localIp": "2001:db8::7a04:73ff:fe37:874d"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::7a04:73ff:fe37:874f"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1974:d99:0:2b0:19ff:fe74:d99"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973f02f",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1973:f032:0:2b0:19ff:fe73:f032"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:f031:0:2b0:19ff:fe73:f031"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:f02f"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:f030"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1973:f83d:0:2b0:19ff:fe73:f83d"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:e5c8"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:e5c7"
+          }
+        ]
+      },
+      {
         "nodeName": "Node00b01973f033",
         "localIpInfo": [
           {
@@ -273,15 +332,15 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe74:a17"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:26b"
           },
           {
             "interface": "usb1",
             "neighIp": "2001:1974:ba9:0:2b0:19ff:fe74:ba9"
           },
           {
-            "interface": "usb0",
-            "neighIp": "fe80::4100:db10:d398:e327"
+            "neighIp": "2001:db8::2b0:19ff:fe74:a17"
           }
         ]
       },
@@ -306,14 +365,14 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fde7"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1973:fb89:0:2b0:19ff:fe73:fb89"
           },
           {
+            "neighIp": "fe80::2b0:19ff:fe73:fde7"
+          },
+          {
+            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fde8"
           }
         ]
@@ -365,11 +424,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:ea6c"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fcc7"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:ea6c"
           },
           {
             "interface": "usb1",
@@ -398,15 +457,15 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f0f7"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1974:bc9:0:2b0:19ff:fe74:bc9"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:ff60"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f0f7"
           }
         ]
       },
@@ -456,15 +515,15 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe74:dab"
+            "interface": "usb1",
+            "neighIp": "2001:1973:e5d1:0:2b0:19ff:fe73:e5d1"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:dac"
           },
           {
-            "interface": "usb1",
-            "neighIp": "2001:1973:e5d1:0:2b0:19ff:fe73:e5d1"
+            "neighIp": "fe80::2b0:19ff:fe74:dab"
           }
         ]
       },
@@ -514,11 +573,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc93"
+            "neighIp": "2001:db8::2b0:19ff:fe74:9b0"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe74:9b0"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fc93"
           }
         ]
       },
@@ -539,11 +598,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe1c"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::3603:deff:fe75:f96a"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe1c"
           }
         ]
       },
@@ -568,11 +627,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe50"
+            "neighIp": "fe80::2b0:19ff:fe73:fe4f"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe4f"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe50"
           },
           {
             "interface": "usb1",
@@ -602,14 +661,14 @@
         "neighIpInfo": [
           {
             "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:e5cf"
+            "neighIp": "2001:db8::2b0:19ff:fe73:e5d0"
           },
           {
             "interface": "usb1",
             "neighIp": "2001:1973:f895:0:2b0:19ff:fe73:f895"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:e5d0"
+            "neighIp": "2001:db8::2b0:19ff:fe73:e5cf"
           }
         ]
       },
@@ -681,11 +740,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f064"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe2b"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f064"
           }
         ]
       },
@@ -756,11 +815,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe8c"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fdff"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe8c"
           }
         ]
       },
@@ -776,11 +835,11 @@
             "localIp": "2001:1973:f111:0:2b0:19ff:fe73:f111"
           },
           {
-            "localIp": "2001:db8::2b0:19ff:fe73:f10f"
+            "localIp": "2001:db8::7a04:73ff:fe37:b70b"
           },
           {
             "interface": "eth1",
-            "localIp": "2001:db8::2b0:19ff:fe73:f110"
+            "localIp": "2001:db8::7a04:73ff:fe37:b70d"
           }
         ],
         "neighIpInfo": [
@@ -794,6 +853,10 @@
           {
             "interface": "usb1",
             "neighIp": "2001:1973:fee1:0:2b0:19ff:fe73:fee1"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "fe80::55ad:7a53:c579:1621"
           }
         ]
       },
@@ -843,15 +906,15 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe74:db3"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1973:e5c9:0:2b0:19ff:fe73:e5c9"
           },
           {
+            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:db4"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe74:db3"
           }
         ]
       },
@@ -871,6 +934,10 @@
           }
         ],
         "neighIpInfo": [
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1973:f206:0:2b0:19ff:fe73:f206"
+          },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:f8a0"
           },
@@ -897,11 +964,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:ff5f"
+            "neighIp": "2001:db8::2b0:19ff:fe74:dbb"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe74:dbb"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff5f"
           }
         ]
       },
@@ -922,11 +989,41 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe5f"
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff10"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:ff10"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe5f"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973f203",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1973:f206:0:2b0:19ff:fe73:f206"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:f205:0:2b0:19ff:fe73:f205"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:f203"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:f204"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1973:f129:0:2b0:19ff:fe73:f129"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:da7"
           }
         ]
       },
@@ -977,11 +1074,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "usb1",
-            "neighIp": "2001:1973:f845:0:2b0:19ff:fe73:f845"
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe0c"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe0c"
+            "interface": "usb1",
+            "neighIp": "2001:1973:f845:0:2b0:19ff:fe73:f845"
           }
         ]
       },
@@ -1009,12 +1106,12 @@
             "neighIp": "2001:db8::2b0:19ff:fe73:f108"
           },
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe54"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1973:fec5:0:2b0:19ff:fe73:fec5"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe54"
           }
         ]
       },
@@ -1086,11 +1183,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:ff08"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:d9b"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff08"
           }
         ]
       },
@@ -1115,15 +1212,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "usb1",
+            "neighIp": "2001:1973:f8a1:0:2b0:19ff:fe73:f8a1"
+          },
+          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fccb"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fbec"
-          },
-          {
-            "interface": "usb1",
-            "neighIp": "2001:1973:f8a1:0:2b0:19ff:fe73:f8a1"
           }
         ]
       },
@@ -1177,11 +1274,11 @@
             "neighIp": "2001:db8::2b0:19ff:fe73:fe3b"
           },
           {
-            "interface": "usb1",
-            "neighIp": "2001:1973:f071:0:2b0:19ff:fe73:f071"
+            "neighIp": "2001:db8::2b0:19ff:fe73:f260"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f260"
+            "interface": "usb1",
+            "neighIp": "2001:1973:f071:0:2b0:19ff:fe73:f071"
           }
         ]
       },
@@ -1206,15 +1303,40 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:f1b"
+          },
+          {
             "interface": "usb1",
             "neighIp": "2001:1973:f829:0:2b0:19ff:fe73:f829"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:f320"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973f26b",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:f26d:0:2b0:19ff:fe73:f26d"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:f26b"
           },
           {
             "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe74:f1b"
+            "localIp": "2001:db8::2b0:19ff:fe73:f26c"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fcf7"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff6c"
           }
         ]
       },
@@ -1239,15 +1361,15 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe0f"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe04"
           },
           {
             "interface": "usb1",
             "neighIp": "2001:1974:bdd:0:2b0:19ff:fe74:bdd"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe0f"
           }
         ]
       },
@@ -1272,15 +1394,15 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "usb1",
-            "neighIp": "2001:1973:fe51:0:2b0:19ff:fe73:fe51"
-          },
-          {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fb87"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fb88"
+          },
+          {
+            "neighIp": "fe80::2b0:19ff:fe73:fb87"
+          },
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1973:fe51:0:2b0:19ff:fe73:fe51"
           }
         ]
       },
@@ -1382,11 +1504,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f267"
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe24"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe24"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f267"
           }
         ]
       },
@@ -1415,11 +1537,11 @@
             "neighIp": "2001:db8::2b0:19ff:fe73:fc8f"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc64"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1973:f81d:0:2b0:19ff:fe73:f81d"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fc64"
           }
         ]
       },
@@ -1440,11 +1562,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f89f"
-          },
-          {
             "interface": "usb0",
             "neighIp": "2001:1973:f2be:0:2b0:19ff:fe73:f2be"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f89f"
           },
           {
             "interface": "eth1",
@@ -1469,15 +1591,15 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f83c"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f89c"
           },
           {
             "interface": "usb0",
             "neighIp": "2001:1973:f326:0:2b0:19ff:fe73:f326"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f894"
           }
         ]
       },
@@ -1498,15 +1620,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "usb0",
+            "neighIp": "2001:1973:f26a:0:2b0:19ff:fe73:f26a"
+          },
+          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f8a3"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:f06f"
-          },
-          {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f26a:0:2b0:19ff:fe73:f26a"
           }
         ]
       },
@@ -1527,15 +1649,15 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
+            "interface": "usb0",
+            "neighIp": "2001:1973:f032:0:2b0:19ff:fe73:f032"
+          },
+          {
             "neighIp": "2001:db8::2b0:19ff:fe73:f81b"
           },
           {
+            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f894"
-          },
-          {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f032:0:2b0:19ff:fe73:f032"
           }
         ]
       },
@@ -1556,15 +1678,15 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f814"
+            "interface": "usb0",
+            "neighIp": "2001:1973:f20e:0:2b0:19ff:fe73:f20e"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f89b"
           },
           {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f20e:0:2b0:19ff:fe73:f20e"
+            "neighIp": "2001:db8::2b0:19ff:fe73:f814"
           }
         ]
       },
@@ -1585,11 +1707,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f83b"
+            "neighIp": "2001:db8::2b0:19ff:fe73:fedf"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fedf"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f83c"
           },
           {
             "interface": "usb0",
@@ -1614,12 +1736,12 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f81c"
-          },
-          {
             "interface": "usb0",
             "neighIp": "2001:1973:e882:0:2b0:19ff:fe73:e882"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f81c"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:f844"
@@ -1643,15 +1765,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "usb0",
+            "neighIp": "2001:1973:f25a:0:2b0:19ff:fe73:f25a"
+          },
+          {
             "neighIp": "2001:db8::2b0:19ff:fe73:f813"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f127"
-          },
-          {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f25a:0:2b0:19ff:fe73:f25a"
           }
         ]
       },
@@ -1701,11 +1823,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f0f4"
+            "interface": "eth1",
+            "neighIp": "2001:db8::7a04:73ff:fe37:b70b"
           },
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f10f"
+            "neighIp": "2001:db8::2b0:19ff:fe73:f0f4"
           }
         ]
       },
@@ -1726,11 +1848,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fe53"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:ff07"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe53"
           }
         ]
       },
@@ -1751,11 +1873,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:e0e8"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe5b"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:e0e8"
           }
         ]
       },
@@ -1805,15 +1927,52 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "usb1",
+            "neighIp": "2001:1973:fc69:0:2b0:19ff:fe73:fc69"
+          },
+          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe43"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fc68"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973fb83",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1973:fb86:0:2b0:19ff:fe73:fb86"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:fb85:0:2b0:19ff:fe73:fb85"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:fb83"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:fb84"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe03"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe58"
           },
           {
             "interface": "usb1",
-            "neighIp": "2001:1973:fc69:0:2b0:19ff:fe73:fc69"
+            "neighIp": "2001:1973:fe59:0:2b0:19ff:fe73:fe59"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1973:fe06:0:2b0:19ff:fe73:fe06"
           }
         ]
       },
@@ -1834,11 +1993,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f03a:0:2b0:19ff:fe73:f03a"
+            "neighIp": "fe80::2b0:19ff:fe73:f273"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f273"
+            "interface": "usb0",
+            "neighIp": "2001:1973:f03a:0:2b0:19ff:fe73:f03a"
           },
           {
             "interface": "eth1",
@@ -1862,10 +2021,6 @@
           }
         ],
         "neighIpInfo": [
-          {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc63"
-          },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fc58"
           },
@@ -1918,16 +2073,16 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc43"
+            "interface": "usb0",
+            "neighIp": "2001:1973:f20a:0:2b0:19ff:fe73:f20a"
           },
           {
             "interface": "usb1",
             "neighIp": "2001:1973:fd0d:0:2b0:19ff:fe73:fd0d"
           },
           {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f20a:0:2b0:19ff:fe73:f20a"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fc43"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fce8"
@@ -1951,11 +2106,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:e880"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe57"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:e880"
           }
         ]
       },
@@ -1980,6 +2135,10 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:d97"
+          },
+          {
             "interface": "usb1",
             "neighIp": "2001:1973:fd11:0:2b0:19ff:fe73:fd11"
           },
@@ -1989,10 +2148,6 @@
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fbf4"
-          },
-          {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe74:d97"
           }
         ]
       },
@@ -2023,9 +2178,6 @@
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fbe7"
-          },
-          {
-            "neighIp": "2001:db8::2b0:19ff:fe74:a18"
           }
         ]
       },
@@ -2075,15 +2227,12 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f323"
-          },
-          {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fbe8"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1973:fbe9:0:2b0:19ff:fe73:fbe9"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f323"
           }
         ]
       },
@@ -2104,15 +2253,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "usb0",
+            "neighIp": "2001:1973:fb82:0:2b0:19ff:fe73:fb82"
+          },
+          {
             "neighIp": "2001:db8::2b0:19ff:fe73:f250"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fb7f"
-          },
-          {
-            "interface": "usb0",
-            "neighIp": "2001:1973:fb82:0:2b0:19ff:fe73:fb82"
           }
         ]
       },
@@ -2133,11 +2282,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f324"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe67"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f324"
           }
         ]
       },
@@ -2233,11 +2382,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fbf3"
+            "neighIp": "2001:db8::2b0:19ff:fe73:f2bc"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f2bc"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fbf3"
           }
         ]
       },
@@ -2263,6 +2412,31 @@
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe8b"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973fcf7",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:fcf9:0:2b0:19ff:fe73:fcf9"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:fcf7"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:fcf8"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:a37"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f26c"
           }
         ]
       },
@@ -2349,6 +2523,7 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f038"
           },
           {
@@ -2356,7 +2531,6 @@
             "neighIp": "2001:1973:f03e:0:2b0:19ff:fe73:f03e"
           },
           {
-            "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f037"
           }
         ]
@@ -2403,12 +2577,12 @@
             "neighIp": "2001:db8::2b0:19ff:fe73:fe14"
           },
           {
-            "interface": "usb0",
-            "neighIp": "2001:1973:f236:0:2b0:19ff:fe73:f236"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe3f"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1973:f236:0:2b0:19ff:fe73:f236"
           }
         ]
       },
@@ -2429,11 +2603,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f10c"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fe83"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f10c"
           }
         ]
       },
@@ -2458,15 +2632,15 @@
         ],
         "neighIpInfo": [
           {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fb84"
+          },
+          {
             "interface": "usb1",
             "neighIp": "2001:1973:fb85:0:2b0:19ff:fe73:fb85"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f270"
-          },
-          {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fb84"
           }
         ]
       },
@@ -2491,19 +2665,19 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f20b"
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff04"
           },
           {
-            "interface": "usb1",
-            "neighIp": "2001:1973:fe19:0:2b0:19ff:fe73:fe19"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f20b"
           },
           {
             "interface": "usb0",
             "neighIp": "2001:1973:f31e:0:2b0:19ff:fe73:f31e"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:ff04"
+            "interface": "usb1",
+            "neighIp": "2001:1973:fe19:0:2b0:19ff:fe73:fe19"
           }
         ]
       },
@@ -2524,15 +2698,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "usb0",
+            "neighIp": "2001:1974:dc6:0:2b0:19ff:fe74:dc6"
+          },
+          {
             "neighIp": "2001:db8::2b0:19ff:fe73:f26f"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:dc3"
-          },
-          {
-            "interface": "usb0",
-            "neighIp": "2001:1974:dc6:0:2b0:19ff:fe74:dc6"
           }
         ]
       },
@@ -2575,11 +2749,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fd00"
-          },
-          {
             "interface": "usb0",
             "neighIp": "2001:1973:fe0e:0:2b0:19ff:fe73:fe0e"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fd00"
           }
         ]
       },
@@ -2650,11 +2824,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fcc8"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:da3"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fcc8"
           }
         ]
       },
@@ -2700,11 +2874,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f264"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fcf3"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f264"
           }
         ]
       },
@@ -2725,15 +2899,15 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "usb0",
-            "neighIp": "2001:1973:edce:0:2b0:19ff:fe73:edce"
-          },
-          {
             "neighIp": "2001:db8::2b0:19ff:fe73:fdf0"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:ff03"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1973:edce:0:2b0:19ff:fe73:edce"
           }
         ]
       },
@@ -2757,12 +2931,12 @@
             "neighIp": "2001:db8::2b0:19ff:fe73:fb80"
           },
           {
-            "interface": "usb0",
-            "neighIp": "2001:1973:e58e:0:2b0:19ff:fe73:e58e"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:e58b"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1973:e58e:0:2b0:19ff:fe73:e58e"
           }
         ]
       },
@@ -2791,11 +2965,11 @@
             "neighIp": "2001:db8::2b0:19ff:fe74:d83"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f114"
-          },
-          {
             "interface": "usb1",
             "neighIp": "2001:1974:445:0:2b0:19ff:fe74:445"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f114"
           }
         ]
       },
@@ -2824,7 +2998,7 @@
             "neighIp": "2001:1973:f276:0:2b0:19ff:fe73:f276"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f07f"
+            "neighIp": "fe80::2b0:19ff:fe73:f07f"
           }
         ]
       },
@@ -2845,11 +3019,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f210"
+            "neighIp": "2001:db8::2b0:19ff:fe73:fb6f"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fb6f"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f210"
           }
         ]
       },
@@ -2870,15 +3044,15 @@
         ],
         "neighIpInfo": [
           {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fbf8"
+          },
+          {
             "interface": "usb0",
             "neighIp": "2001:1973:fb86:0:2b0:19ff:fe73:fb86"
           },
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fb83"
-          },
-          {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fbf8"
           }
         ]
       },
@@ -2899,11 +3073,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fb74"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f0fb"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fb74"
           }
         ]
       },
@@ -2949,7 +3123,7 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f110"
+            "neighIp": "2001:db8::7a04:73ff:fe37:b70d"
           },
           {
             "interface": "eth1",
@@ -2975,6 +3149,10 @@
         "neighIpInfo": [
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fc90"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1974:9a6:0:2b0:19ff:fe74:9a6"
           }
         ]
       },
@@ -2995,11 +3173,40 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f2b7"
+            "neighIp": "2001:db8::2b0:19ff:fe73:dfb0"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:dfb0"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f2b7"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973fe77",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:fe79:0:2b0:19ff:fe73:fe79"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:fe77"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:fe78"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe74:a38"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1974:d96:0:2b0:19ff:fe74:d96"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:d93"
           }
         ]
       },
@@ -3045,11 +3252,11 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f10b"
+            "neighIp": "2001:db8::2b0:19ff:fe73:fcf4"
           },
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fcf4"
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f10b"
           }
         ]
       },
@@ -3070,15 +3277,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fee0"
+          },
+          {
             "interface": "usb0",
             "neighIp": "2001:1973:f212:0:2b0:19ff:fe73:f212"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:f070"
-          },
-          {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fee0"
           }
         ]
       },
@@ -3162,6 +3369,31 @@
         ]
       },
       {
+        "nodeName": "Node00b01973ff0b",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:ff0d:0:2b0:19ff:fe73:ff0d"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:ff0b"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:ff0c"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff6f"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe74:da8"
+          }
+        ]
+      },
+      {
         "nodeName": "Node00b01973ff0f",
         "localIpInfo": [
           {
@@ -3178,11 +3410,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc60"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f1ff"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fc60"
           }
         ]
       },
@@ -3203,11 +3435,119 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f063"
+          },
+          {
             "neighIp": "2001:db8::2b0:19ff:fe73:f1f0"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973ff67",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:ff69:0:2b0:19ff:fe73:ff69"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:ff67"
           },
           {
             "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f063"
+            "localIp": "2001:db8::2b0:19ff:fe73:ff68"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff6b"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff70"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973ff6b",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:ff6d:0:2b0:19ff:fe73:ff6d"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:ff6b"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:ff6c"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:f26b"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff68"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01973ff6f",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1973:ff71:0:2b0:19ff:fe73:ff71"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe73:ff6f"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe73:ff70"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff0c"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff67"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b01974026b",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1974:26e:0:2b0:19ff:fe74:26e"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1974:26d:0:2b0:19ff:fe74:26d"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe74:26b"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe74:26c"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f034"
+          },
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1974:9a5:0:2b0:19ff:fe74:9a5"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe74:9a3"
           }
         ]
       },
@@ -3234,6 +3574,39 @@
         ]
       },
       {
+        "nodeName": "Node00b0197409a3",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1974:9a6:0:2b0:19ff:fe74:9a6"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1974:9a5:0:2b0:19ff:fe74:9a5"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe74:9a3"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe74:9a4"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1973:fe69:0:2b0:19ff:fe73:fe69"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1974:26e:0:2b0:19ff:fe74:26e"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe74:26c"
+          }
+        ]
+      },
+      {
         "nodeName": "Node00b0197409af",
         "localIpInfo": [
           {
@@ -3250,11 +3623,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe74:da0"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:f077"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe74:da0"
           }
         ]
       },
@@ -3275,15 +3648,36 @@
         ],
         "neighIpInfo": [
           {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:fc57"
+            "interface": "usb0",
+            "neighIp": "2001:1973:fc5a:0:2b0:19ff:fe73:fc5a"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:f033"
-          },
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b019740a37",
+        "localIpInfo": [
           {
             "interface": "usb0",
-            "neighIp": "2001:1973:fc5a:0:2b0:19ff:fe73:fc5a"
+            "localIp": "2001:1974:a39:0:2b0:19ff:fe74:a39"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe74:a37"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe74:a38"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe77"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fcf8"
           }
         ]
       },
@@ -3303,10 +3697,6 @@
           {
             "interface": "usb0",
             "neighIp": "2001:1973:f036:0:2b0:19ff:fe73:f036"
-          },
-          {
-            "interface": "eth1",
-            "neighIp": "fe80::2b0:19ff:fe78:ee97"
           }
         ]
       },
@@ -3326,10 +3716,6 @@
           {
             "interface": "usb0",
             "neighIp": "2001:1973:f066:0:2b0:19ff:fe73:f066"
-          },
-          {
-            "interface": "eth1",
-            "neighIp": "fe80::2b0:19ff:fe78:eefb"
           }
         ]
       },
@@ -3378,6 +3764,35 @@
         ]
       },
       {
+        "nodeName": "Node00b019740d93",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1974:d96:0:2b0:19ff:fe74:d96"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1974:d95:0:2b0:19ff:fe74:d95"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe74:d93"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe74:d94"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:fe78"
+          },
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1973:fe79:0:2b0:19ff:fe73:fe79"
+          }
+        ]
+      },
+      {
         "nodeName": "Node00b019740d97",
         "localIpInfo": [
           {
@@ -3403,6 +3818,10 @@
           {
             "interface": "usb1",
             "neighIp": "2001:1973:fded:0:2b0:19ff:fe73:fded"
+          },
+          {
+            "interface": "usb0",
+            "neighIp": "2001:1973:f02a:0:2b0:19ff:fe73:f02a"
           }
         ]
       },
@@ -3423,11 +3842,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f254"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe73:fc5f"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f254"
           }
         ]
       },
@@ -3448,11 +3867,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe74:f1c"
-          },
-          {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:9af"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe74:f1c"
           }
         ]
       },
@@ -3478,6 +3897,31 @@
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fe28"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b019740da7",
+        "localIpInfo": [
+          {
+            "interface": "usb0",
+            "localIp": "2001:1974:da9:0:2b0:19ff:fe74:da9"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe74:da7"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe74:da8"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:ff0b"
+          },
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:f204"
           }
         ]
       },
@@ -3523,11 +3967,11 @@
         ],
         "neighIpInfo": [
           {
-            "neighIp": "2001:db8::2b0:19ff:fe73:f120"
+            "neighIp": "fe80::2b0:19ff:fe73:f11f"
           },
           {
             "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:f11f"
+            "neighIp": "2001:db8::2b0:19ff:fe73:f120"
           },
           {
             "interface": "usb0",
@@ -3606,15 +4050,15 @@
         ],
         "neighIpInfo": [
           {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:e56f"
+          },
+          {
             "interface": "usb1",
             "neighIp": "2001:1973:fe11:0:2b0:19ff:fe73:fe11"
           },
           {
             "neighIp": "2001:db8::2b0:19ff:fe73:fe10"
-          },
-          {
-            "interface": "eth1",
-            "neighIp": "2001:db8::2b0:19ff:fe73:e56f"
           }
         ]
       },
@@ -3640,6 +4084,39 @@
           {
             "interface": "eth1",
             "neighIp": "2001:db8::2b0:19ff:fe74:d9f"
+          }
+        ]
+      },
+      {
+        "nodeName": "Node00b019775611",
+        "localIpInfo": [
+          {
+            "interface": "usb1",
+            "localIp": "2001:1977:5614:0:2b0:19ff:fe77:5614"
+          },
+          {
+            "interface": "usb0",
+            "localIp": "2001:1977:5613:0:2b0:19ff:fe77:5613"
+          },
+          {
+            "localIp": "2001:db8::2b0:19ff:fe77:5611"
+          },
+          {
+            "interface": "eth1",
+            "localIp": "2001:db8::2b0:19ff:fe77:5612"
+          }
+        ],
+        "neighIpInfo": [
+          {
+            "neighIp": "2001:db8::2b0:19ff:fe73:e570"
+          },
+          {
+            "interface": "usb1",
+            "neighIp": "2001:1973:e571:0:2b0:19ff:fe73:e571"
+          },
+          {
+            "interface": "eth1",
+            "neighIp": "2001:db8::2b0:19ff:fe73:e87f"
           }
         ]
       }

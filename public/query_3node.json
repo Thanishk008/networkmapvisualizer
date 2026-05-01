@@ -1,0 +1,62 @@
+{
+  "status": "SUCCESS",
+  "nodeInfo": [
+    {
+      "nodeName": "Node00b01973fe73",
+      "firmwareVersion": "08.00.00.94032",
+      "baselineFirmwareVersion": "08.00.00.94032",
+      "configurationVersion": "1.1.0.9",
+      "cuVersion": "8.00.00.392",
+      "projectGuid": "83a1109e-6eaa-46cb-a32c-e3ee84815c9c",
+      "configurationGuid": "8fbb5b4e-8deb-4717-b8a2-11ad05b2226e",
+      "archiveGuid": "9e62bfeb-7faa-4ecc-bf92-d26842e35555",
+      "freeDiskSpaceMb": "3967",
+      "ipAddress": "2001:1973:fe75:0:2b0:19ff:fe73:fe75",
+      "cpuType": "98",
+      "cwsProtocolVersion": "2.1.0.0",
+      "nodeId": "2",
+      "archiveVersion": "1.1.0.9",
+      "nodeLabelPath": "3N Test\\\u200bNode 2\\\u200bHardware Layer\\ANNCPU",
+      "brandType": "BRAND_OTC",
+      "schemaVersion": "00.06.00.68"
+    },
+    {
+      "nodeName": "Node00b019749384",
+      "firmwareVersion": "08.00.00.94032",
+      "baselineFirmwareVersion": "08.00.00.94032",
+      "configurationVersion": "1.1.0.9",
+      "cuVersion": "8.00.00.392",
+      "projectGuid": "83a1109e-6eaa-46cb-a32c-e3ee84815c9c",
+      "configurationGuid": "8fbb5b4e-8deb-4717-b8a2-11ad05b2226e",
+      "archiveGuid": "9e62bfeb-7faa-4ecc-bf92-d26842e35555",
+      "freeDiskSpaceMb": "10499",
+      "ipAddress": "2001:1974:9386:0:2b0:19ff:fe74:9386",
+      "cpuType": "100",
+      "cwsProtocolVersion": "2.1.0.0",
+      "nodeId": "3",
+      "archiveVersion": "1.1.0.9",
+      "nodeLabelPath": "3N Test\\\u200bNode 3\\\u200bHardware Layer\\FWAL",
+      "brandType": "BRAND_OTC",
+      "schemaVersion": "00.06.00.68"
+    },
+    {
+      "nodeName": "Node00b01973e80f",
+      "firmwareVersion": "08.00.00.94032",
+      "baselineFirmwareVersion": "08.00.00.94032",
+      "configurationVersion": "1.1.0.9",
+      "cuVersion": "8.00.00.392",
+      "projectGuid": "83a1109e-6eaa-46cb-a32c-e3ee84815c9c",
+      "configurationGuid": "8fbb5b4e-8deb-4717-b8a2-11ad05b2226e",
+      "archiveGuid": "9e62bfeb-7faa-4ecc-bf92-d26842e35555",
+      "freeDiskSpaceMb": "3969",
+      "ipAddress": "2001:1973:e811:0:2b0:19ff:fe73:e811",
+      "cpuType": "97",
+      "cwsProtocolVersion": "2.1.0.0",
+      "nodeId": "1",
+      "archiveVersion": "1.1.0.9",
+      "nodeLabelPath": "3N Test\\\u200bNode 1\\\u200bHardware Layer\\CPU",
+      "brandType": "BRAND_OTC",
+      "schemaVersion": "00.06.00.68"
+    }
+  ]
+}
